@@ -70,6 +70,12 @@ def register():
     register_window.mainloop()
 
 def main():
+    def search():
+        value = '%' + search_entry.get() + '%'
+        main_table.delete(*main_table.get_children())
+        for i in cur.execute(f'SELECT * FROM planes WHERE plane_type LIKE ? OR engine_type LIKE ?', (value, value)):
+            main_table.insert('', 0, values=i)
+
     main_window = Tk()
     main_window.geometry('+200+200')
 
@@ -89,7 +95,7 @@ def main():
         main_table.insert('', 0, values=value)
     
     search_entry = Entry(main_window)
-    search_btn = Button(main_window, text='Поиск')
+    search_btn = Button(main_window, text='Поиск', command=search)
 
     companies_btn.grid(row=0, column=0)
     add_plane_btn.grid(row=0, column=1)
@@ -209,6 +215,8 @@ def plane_types():
             cur.execute('INSERT INTO types (plane_type, engine_type) VALUES (?, ?)', (plane_type_entry.get(), engine_type_entry.get()))
             db.commit()
             table.insert('', 0, values=(plane_type_entry.get(), engine_type_entry.get()))
+            plane_type_entry.delete(0, END)
+            engine_type_entry.delete(0, END)
 
     plane_types_window = Toplevel()
     plane_types_window.title('Добавить новый тип')

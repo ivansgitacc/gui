@@ -97,8 +97,11 @@ def main():
     search_entry = Entry(main_window)
     search_btn = Button(main_window, text='Поиск', command=search)
 
+    analisys_btn = Button(main_window, text='Анализ', command=analisys)
+
     companies_btn.grid(row=0, column=0)
     add_plane_btn.grid(row=0, column=1)
+    analisys_btn.grid(row=0, column=17)
     search_entry.grid(row=0, column=18)
     search_btn.grid(row=0, column=19)
     main_table.grid(row=1, column=0, columnspan=20, pady=(10, 0))
@@ -236,5 +239,146 @@ def plane_types():
 
     plane_types_window.mainloop()
 
+def analisys():
+    def calculate(): #percentage_of_differenses
+        fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
+        w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
+        ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
+        cr_differences = ((float(measure_cr_entry.get()) - float(fon_cr_entry.get())) / (float(intensity_cr_entry.get()) - float(fon_cr_entry.get()))) * 100
+        mo_differences = ((float(measure_mo_entry.get()) - float(fon_mo_entry.get())) / (float(intensity_mo_entry.get()) - float(fon_mo_entry.get()))) * 100
+        v_differences = ((float(measure_v_entry.get()) - float(fon_v_entry.get())) / (float(intensity_v_entry.get()) - float(fon_v_entry.get()))) * 100
+        mn_differences = ((float(measure_mn_entry.get()) - float(fon_mn_entry.get())) / (float(intensity_mn_entry.get()) - float(fon_mn_entry.get()))) * 100
+
+        differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences, mn_differences])
+        a = 100 / differences_sum
+
+        fe_result.insert(0, str(fe_differences * a))
+        w_result.insert(0, str(w_differences * a))
+        ni_result.insert(0, str(ni_differences * a))
+        cr_result.insert(0, str(cr_differences * a))
+        mo_result.insert(0, str(mo_differences * a))
+        v_result.insert(0, str(v_differences * a))
+        mn_result.insert(0, str(mn_differences * a))
+
+    analisys_window = Toplevel()
+    analisys_window.title('Анализ стружки')
+
+    base_label = Label(analisys_window, text='Основа')
+    base_menu = Combobox(analisys_window, values=['Fe', 'Ni', 'Mo', 'Mn', 'V', 'W'], width=2)
+    submit_btn = Button(analisys_window, text='Измерить', command=calculate)
+
+    base_label.grid(row=0, column=0)
+    base_menu.grid(row=0, column=1)
+    submit_btn.grid(row=0, column=6, columnspan=6)
+
+    # Интенсивность
+
+    fe_label = Label(analisys_window, text='Fe')
+    w_label = Label(analisys_window, text='W')
+    ni_label = Label(analisys_window, text='Ni')
+    cr_label = Label(analisys_window, text='Cr')
+    mo_label = Label(analisys_window, text='Mo')
+    v_label = Label(analisys_window, text='V')
+    mn_label = Label(analisys_window, text='Mn')
+
+    fe_label.grid(row=2, column=0)
+    w_label.grid(row=2, column=1)
+    ni_label.grid(row=2, column=2)
+    cr_label.grid(row=2, column=3)
+    mo_label.grid(row=2, column=4)
+    v_label.grid(row=2, column=5)
+    mn_label.grid(row=2, column=6)
+
+    intensity_label = Label(analisys_window, text='Интенсивность')
+    intensity_fe_entry = Entry(analisys_window, width=10)
+    intensity_w_entry = Entry(analisys_window, width=10)
+    intensity_ni_entry = Entry(analisys_window, width=10)
+    intensity_cr_entry = Entry(analisys_window, width=10)
+    intensity_mo_entry = Entry(analisys_window, width=10)
+    intensity_v_entry = Entry(analisys_window, width=10)
+    intensity_mn_entry = Entry(analisys_window, width=10)
+
+    intensity_label.grid(row=1, column=0, columnspan=7)
+    intensity_fe_entry.grid(row=3, column=0)
+    intensity_w_entry.grid(row=3, column=1)
+    intensity_ni_entry.grid(row=3, column=2)
+    intensity_cr_entry.grid(row=3, column=3)
+    intensity_mo_entry.grid(row=3, column=4)
+    intensity_v_entry.grid(row=3, column=5)
+    intensity_mn_entry.grid(row=3, column=6)
+
+    #Фон
+
+    fon_label = Label(analisys_window, text='Фон')
+    fon_fe_entry = Entry(analisys_window, width=10)
+    fon_w_entry = Entry(analisys_window, width=10)
+    fon_ni_entry = Entry(analisys_window, width=10)
+    fon_cr_entry = Entry(analisys_window, width=10)
+    fon_mo_entry = Entry(analisys_window, width=10)
+    fon_v_entry = Entry(analisys_window, width=10)
+    fon_mn_entry = Entry(analisys_window, width=10)
+
+    fon_label.grid(row=4, column=0, columnspan=7)
+    fon_fe_entry.grid(row=5, column=0)
+    fon_w_entry.grid(row=5, column=1)
+    fon_ni_entry.grid(row=5, column=2)
+    fon_cr_entry.grid(row=5, column=3)
+    fon_mo_entry.grid(row=5, column=4)
+    fon_v_entry.grid(row=5, column=5)
+    fon_mn_entry.grid(row=5, column=6)
+
+
+    measure_label = Label(analisys_window, text='Измерения')
+    measure_fe_entry = Entry(analisys_window, width=10)
+    measure_w_entry = Entry(analisys_window, width=10)
+    measure_ni_entry = Entry(analisys_window, width=10)
+    measure_cr_entry = Entry(analisys_window, width=10)
+    measure_mo_entry = Entry(analisys_window, width=10)
+    measure_v_entry = Entry(analisys_window, width=10)
+    measure_mn_entry = Entry(analisys_window, width=10)
+
+    measure_label.grid(row=6, columnspan=7)
+    measure_fe_entry.grid(row=7, column=0)
+    measure_w_entry.grid(row=7, column=1)
+    measure_ni_entry.grid(row=7, column=2)
+    measure_cr_entry.grid(row=7, column=3)
+    measure_mo_entry.grid(row=7, column=4)
+    measure_v_entry.grid(row=7, column=5)
+    measure_mn_entry.grid(row=7, column=6)
+
+    fe_label_2 = Label(analisys_window, text='Fe')
+    w_label_2 = Label(analisys_window, text='W')
+    ni_label_2 = Label(analisys_window, text='Ni')
+    cr_label_2 = Label(analisys_window, text='Cr')
+    mo_label_2 = Label(analisys_window, text='Mo')
+    v_label_2 = Label(analisys_window, text='V')
+    mn_label_2 = Label(analisys_window, text='Mn')
+
+    fe_label_2.grid(row=8, column=0, pady=(10, 0))
+    w_label_2.grid(row=8, column=1, pady=(10, 0))
+    ni_label_2.grid(row=8, column=2, pady=(10, 0))
+    cr_label_2.grid(row=8, column=3, pady=(10, 0))
+    mo_label_2.grid(row=8, column=4, pady=(10, 0))
+    v_label_2.grid(row=8, column=5, pady=(10, 0))
+    mn_label_2.grid(row=8, column=6, pady=(10, 0))
+
+    fe_result = Entry(analisys_window, width=10)
+    w_result = Entry(analisys_window, width=10)
+    ni_result = Entry(analisys_window, width=10)
+    cr_result = Entry(analisys_window, width=10)
+    mo_result = Entry(analisys_window, width=10)
+    v_result = Entry(analisys_window, width=10)
+    mn_result = Entry(analisys_window, width=10)
+
+    fe_result.grid(row=9, column=0)
+    w_result.grid(row=9, column=1)
+    ni_result.grid(row=9, column=2)
+    cr_result.grid(row=9, column=3)
+    mo_result.grid(row=9, column=4)
+    v_result.grid(row=9, column=5)
+    mn_result.grid(row=9, column=6)
+
+    analisys_window.mainloop()
+
 if __name__ == '__main__':
-    login()
+    main()

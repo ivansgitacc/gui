@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter.messagebox import showerror, showinfo
 import sqlite3
 
 db = sqlite3.connect('data.db')
@@ -13,8 +14,7 @@ def login():
             login_window.destroy()
             main()
         else:
-            error_label = Label(login_window, text='Пользаватель не найден')
-            error_label.pack()
+            showerror(message='Пользаватель не найден')
 
     login_window = Tk()
     login_window.title('Вход')
@@ -45,8 +45,7 @@ def register():
                 db.commit()
                 register_window.destroy()
             else:
-                error_label = Label(register_window, text='Пароли не совпадают', fg='red')
-                error_label.pack()
+                showerror(message='Пароли не совпадают')
 
     register_window = Toplevel()
     register_window.title('Регистрация')
@@ -80,6 +79,8 @@ def main():
     def analize():
         if main_table.focus():
             analisys()
+        else:
+            showinfo(message='Выберете самолёт')
 
     main_window = Tk()
     main_window.geometry('+200+200')

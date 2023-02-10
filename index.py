@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 import sqlite3
+import math
+import matplotlib.pyplot as plt
 
 db = sqlite3.connect('data.db')
 cur = db.cursor()
@@ -81,12 +83,20 @@ def main():
             analisys()
         else:
             showinfo(message='Выберете самолёт')
+    
+    def delete():
+        items = main_table.item(main_table.focus()).get('values')
+        cur.execute('DELETE FROM planes WHERE plane_number = ?', (items[1],))
+        selected_item = main_table.selection()
+        main_table.delete(selected_item)
+        db.commit()
 
     main_window = Tk()
     main_window.geometry('+200+200')
 
     companies_btn = ttk.Button(main_window, text='Список компаний', command=companies)
     add_plane_btn = ttk.Button(main_window, text='Добавить самолёт', command=planes)
+    delete_plane_btn = ttk.Button(main_window, text='Удалить самолёт', command=delete)
 
     global main_table
     main_table = ttk.Treeview(main_window, height=30, show='headings')
@@ -107,6 +117,7 @@ def main():
 
     companies_btn.grid(row=0, column=0)
     add_plane_btn.grid(row=0, column=1)
+    delete_plane_btn.grid(row=0, column=16)
     analisys_btn.grid(row=0, column=17)
     search_entry.grid(row=0, column=18)
     search_btn.grid(row=0, column=19)
@@ -249,31 +260,62 @@ def plane_types():
 def analisys():
     def add_values():
         cur.execute('INSERT INTO analisys (intensity_fe, intensity_w, intensity_ni, intensity_cr, intensity_mo, intensity_v, intensity_mn, \
-        fon_fe, fon_w, fon_ni, fon_cr, fon_mo, fon_v, fon_mn, engine_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+        fon_fe, fon_w, fon_ni, fon_cr, fon_mo, fon_v, engine_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
         (intensity_fe_entry.get(), intensity_w_entry.get(), intensity_ni_entry.get(), intensity_cr_entry.get(), intensity_mo_entry.get(),
-        intensity_v_entry.get(), intensity_mn_entry.get(), fon_fe_entry.get(), fon_w_entry.get(), fon_ni_entry.get(), fon_cr_entry.get(), 
-        fon_mo_entry.get(), fon_v_entry.get(), fon_mn_entry.get(), engine_number))
+        intensity_v_entry.get(), fon_fe_entry.get(), fon_w_entry.get(), fon_ni_entry.get(), fon_cr_entry.get(), 
+        fon_mo_entry.get(), fon_v_entry.get(), engine_number))
         db.commit()
 
-    def calculate(): #percentage_of_differenses
-        fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
-        w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
-        ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
-        cr_differences = ((float(measure_cr_entry.get()) - float(fon_cr_entry.get())) / (float(intensity_cr_entry.get()) - float(fon_cr_entry.get()))) * 100
-        mo_differences = ((float(measure_mo_entry.get()) - float(fon_mo_entry.get())) / (float(intensity_mo_entry.get()) - float(fon_mo_entry.get()))) * 100
-        v_differences = ((float(measure_v_entry.get()) - float(fon_v_entry.get())) / (float(intensity_v_entry.get()) - float(fon_v_entry.get()))) * 100
-        mn_differences = ((float(measure_mn_entry.get()) - float(fon_mn_entry.get())) / (float(intensity_mn_entry.get()) - float(fon_mn_entry.get()))) * 100
+    def calculate():
+        if intensity_fe_entry.get() and intensity_w_entry.get() and intensity_ni_entry.get() and intensity_cr_entry.get() and intensity_mo_entry.get() and \
+        intensity_v_entry.get() and fon_fe_entry.get() and fon_w_entry.get() and fon_ni_entry.get() and fon_cr_entry.get() and fon_mo_entry.get() and \
+        fon_v_entry.get() and measure_fe_entry.get() and measure_w_entry.get() and measure_ni_entry.get() and measure_cr_entry.get() and measure_mo_entry.get() and \
+        measure_v_entry.get():
+            fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
+            w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
+            ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
+            cr_differences = ((float(measure_cr_entry.get()) - float(fon_cr_entry.get())) / (float(intensity_cr_entry.get()) - float(fon_cr_entry.get()))) * 100
+            mo_differences = ((float(measure_mo_entry.get()) - float(fon_mo_entry.get())) / (float(intensity_mo_entry.get()) - float(fon_mo_entry.get()))) * 100
+            v_differences = ((float(measure_v_entry.get()) - float(fon_v_entry.get())) / (float(intensity_v_entry.get()) - float(fon_v_entry.get()))) * 100
 
-        differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences, mn_differences])
-        a = 100 / differences_sum
+            differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences])
+            a = 100 / differences_sum
 
-        fe_result.insert(0, round(fe_differences * a, 2))
-        w_result.insert(0, round(w_differences * a, 2))
-        ni_result.insert(0, round(ni_differences * a, 2))
-        cr_result.insert(0, round(cr_differences * a, 2))
-        mo_result.insert(0, round(mo_differences * a, 2))
-        v_result.insert (0, round(v_differences * a, 2))
-        mn_result.insert( 0, round(mn_differences * a, 2))
+            fe = round(fe_differences * a, 2)
+            w = round(w_differences * a, 2)
+            ni = round(ni_differences * a, 2)
+            cr = round(cr_differences * a, 2)
+            mo = round(mo_differences * a, 2)
+            v = round(v_differences * a, 2)
+
+            fe_result.insert(0, fe)
+            w_result.insert(0, w)
+            ni_result.insert(0, ni)
+            cr_result.insert(0, cr)
+            mo_result.insert(0, mo)
+            v_result.insert (0, v)
+
+    def analize():
+        query = cur.execute('SELECT * FROM alloy').fetchall()
+        lstsqrt = []
+        names = []
+
+        for row in query:
+            names.append(row[0])
+            lstsqrt.append(
+                ((float(w_result.get()) - float(row[2]))**2) / (1 + math.sqrt(float(row[2]))) +
+                ((float(ni_result.get()) - float(row[3]))**2) / (1 + math.sqrt(float(row[3]))) +
+                ((float(cr_result.get()) - float(row[4]))**2) / (1 + math.sqrt(float(row[4]))) +
+                ((float(mo_result.get()) - float(row[5]))**2) / (1 + math.sqrt(float(row[5]))) +
+                ((float(v_result.get()) - float(row[6]))**2) / (1 + math.sqrt(float(row[6])))
+            )
+
+        percent = list(1 / x for x in lstsqrt)
+        s = 100 / sum(percent)
+        res = list(item * s for item in percent)
+
+        plt.bar(names, res)
+        plt.show()
 
     analisys_window = Toplevel()
     analisys_window.title('Анализ стружки')
@@ -282,14 +324,14 @@ def analisys():
     values = cur.execute('SELECT * FROM analisys WHERE engine_number = ?', (engine_number, )).fetchall()
 
     base_label = ttk.Label(analisys_window, text='Основа')
-    base_menu = ttk.Combobox(analisys_window, values=['Fe', 'Ni', 'Mo', 'Mn', 'V', 'W'], width=2)
+    base_menu = ttk.Combobox(analisys_window, values=['Fe', 'Ni', 'Mo', 'V', 'W'], width=2)
     submit_btn = ttk.Button(analisys_window, text='Измерить', command=calculate)
     save_btn = ttk.Button(analisys_window, text='Сохранить', command=add_values)
+    analize_btn = ttk.Button(analisys_window, text='Анализ', command=analize)
 
-    base_label.grid(row=0, column=0)
-    base_menu.grid(row=0, column=1)
-    submit_btn.grid(row=0, column=6)
-    save_btn.grid(row=0, column=3, columnspan=6)
+    analize_btn.grid(row=0, column=0)
+    submit_btn.grid(row=0, column=5)
+    save_btn.grid(row=0, column=3, columnspan=5)
 
     # Интенсивность
 
@@ -299,7 +341,6 @@ def analisys():
     cr_label = ttk.Label(analisys_window, text='Cr')
     mo_label = ttk.Label(analisys_window, text='Mo')
     v_label = ttk.Label(analisys_window, text='V')
-    mn_label = ttk.Label(analisys_window, text='Mn')
 
     fe_label.grid(row=2, column=0)
     w_label.grid(row=2, column=1)
@@ -307,7 +348,6 @@ def analisys():
     cr_label.grid(row=2, column=3)
     mo_label.grid(row=2, column=4)
     v_label.grid(row=2, column=5)
-    mn_label.grid(row=2, column=6)
 
     intensity_label = ttk.Label(analisys_window, text='Интенсивность')
     intensity_fe_entry = ttk.Entry(analisys_window, width=10)
@@ -316,16 +356,14 @@ def analisys():
     intensity_cr_entry = ttk.Entry(analisys_window, width=10,)
     intensity_mo_entry = ttk.Entry(analisys_window, width=10)
     intensity_v_entry = ttk.Entry(analisys_window, width=10)
-    intensity_mn_entry = ttk.Entry(analisys_window, width=10)
 
-    intensity_label.grid(row=1, column=0, columnspan=7)
+    intensity_label.grid(row=1, column=0, columnspan=7, pady=(20, 10))
     intensity_fe_entry.grid(row=3, column=0, padx=(10, 2))
     intensity_w_entry.grid(row=3, column=1, padx=2)
     intensity_ni_entry.grid(row=3, column=2, padx=2)
     intensity_cr_entry.grid(row=3, column=3, padx=2)
     intensity_mo_entry.grid(row=3, column=4, padx=2)
     intensity_v_entry.grid(row=3, column=5, padx=2)
-    intensity_mn_entry.grid(row=3, column=6, padx=(2, 10))
 
     #Фон
 
@@ -336,16 +374,14 @@ def analisys():
     fon_cr_entry = ttk.Entry(analisys_window, width=10)
     fon_mo_entry = ttk.Entry(analisys_window, width=10)
     fon_v_entry = ttk.Entry(analisys_window, width=10)
-    fon_mn_entry = ttk.Entry(analisys_window, width=10)
 
-    fon_label.grid(row=4, column=0, columnspan=7)
+    fon_label.grid(row=4, column=0, columnspan=7, pady=(20, 10))
     fon_fe_entry.grid(row=5, column=0, padx=(10, 2))
     fon_w_entry.grid(row=5, column=1, padx=2)
     fon_ni_entry.grid(row=5, column=2, padx=2)
     fon_cr_entry.grid(row=5, column=3, padx=2)
     fon_mo_entry.grid(row=5, column=4, padx=2)
     fon_v_entry.grid(row=5, column=5, padx=2)
-    fon_mn_entry.grid(row=5, column=6, padx=(2, 10))
 
     if values:
         intensity_fe_entry.insert(0, values[0][0])
@@ -354,14 +390,12 @@ def analisys():
         intensity_cr_entry.insert(0, values[0][3])
         intensity_mo_entry.insert(0, values[0][4])
         intensity_v_entry.insert(0, values[0][5])
-        intensity_mn_entry.insert(0, values[0][6])
         fon_fe_entry.insert(0, values[0][7])
         fon_w_entry.insert(0, values[0][8])
         fon_ni_entry.insert(0, values[0][9])
         fon_cr_entry.insert(0, values[0][10])
         fon_mo_entry.insert(0, values[0][11])
         fon_v_entry.insert(0, values[0][12])
-        fon_mn_entry.insert(0, values[0][13])
 
 
     measure_label = ttk.Label(analisys_window, text='Измерения')
@@ -371,48 +405,46 @@ def analisys():
     measure_cr_entry = ttk.Entry(analisys_window, width=10)
     measure_mo_entry = ttk.Entry(analisys_window, width=10)
     measure_v_entry = ttk.Entry(analisys_window, width=10)
-    measure_mn_entry = ttk.Entry(analisys_window, width=10)
 
-    measure_label.grid(row=6, columnspan=7)
+    measure_label.grid(row=6, columnspan=7, pady=(20, 10))
     measure_fe_entry.grid(row=7, column=0, padx=(10, 2))
     measure_w_entry.grid(row=7, column=1, padx=2)
     measure_ni_entry.grid(row=7, column=2, padx=2)
     measure_cr_entry.grid(row=7, column=3, padx=2)
     measure_mo_entry.grid(row=7, column=4, padx=2)
     measure_v_entry.grid(row=7, column=5, padx=2)
-    measure_mn_entry.grid(row=7, column=6, padx=(2, 10))
 
-    fe_label_2 = ttk.Label(analisys_window, text='Fe')
-    w_label_2 = ttk.Label(analisys_window, text='W')
-    ni_label_2 = ttk.Label(analisys_window, text='Ni')
-    cr_label_2 = ttk.Label(analisys_window, text='Cr')
-    mo_label_2 = ttk.Label(analisys_window, text='Mo')
-    v_label_2 = ttk.Label(analisys_window, text='V')
-    mn_label_2 = ttk.Label(analisys_window, text='Mn')
 
-    fe_label_2.grid(row=8, column=0)
-    w_label_2.grid(row=8, column=1)
-    ni_label_2.grid(row=8, column=2)
-    cr_label_2.grid(row=8, column=3)
-    mo_label_2.grid(row=8, column=4)
-    v_label_2.grid(row=8, column=5)
-    mn_label_2.grid(row=8, column=6)
-
+    result_label = ttk.Label(analisys_window, text='Результат')
     fe_result = ttk.Entry(analisys_window, width=10)
     w_result = ttk.Entry(analisys_window, width=10)
     ni_result = ttk.Entry(analisys_window, width=10)
     cr_result = ttk.Entry(analisys_window, width=10)
     mo_result = ttk.Entry(analisys_window, width=10)
     v_result = ttk.Entry(analisys_window, width=10)
-    mn_result = ttk.Entry(analisys_window, width=10)
 
+    result_label.grid(row=8, columnspan=7, pady=(20, 10))
     fe_result.grid(row=9, column=0, padx=(10, 2))
     w_result.grid(row=9, column=1, padx=2)
     ni_result.grid(row=9, column=2, padx=2)
     cr_result.grid(row=9, column=3, padx=2)
     mo_result.grid(row=9, column=4, padx=2)
     v_result.grid(row=9, column=5, padx=2)
-    mn_result.grid(row=9, column=6, padx=(2, 10))
+
+    analisys_table = ttk.Treeview(analisys_window, show='headings')
+    headings = [1, 2, 3, 4, 5, 6, 7]
+    analisys_table['columns'] = headings
+
+    for heading in headings:
+        analisys_table.column(heading, width=75, anchor=CENTER)
+    
+    alloys = cur.execute('SELECT * FROM alloy').fetchall()
+
+
+    for row in alloys:
+        analisys_table.insert('', 0, values=row)
+
+    analisys_table.grid(row=12, column=0, columnspan=6, pady=(20, 10), padx=10)
 
     analisys_window.mainloop()
 

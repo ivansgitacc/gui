@@ -2,13 +2,27 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 import sqlite3
-import math
+import json
+from math import sqrt
 import matplotlib.pyplot as plt
 
 db = sqlite3.connect('data.db')
 cur = db.cursor()
-# список компаний из БД
-companies_query = [item[0] for item in cur.execute('SELECT name FROM companies').fetchall()]
+
+# загрузка данный из json файла
+def load_data_from_json(x):
+    global json_file
+    with open(x, 'r', encoding='utf-8') as file:
+        json_file = json.load(file)
+
+# загрузка данный в json файл
+def load_data_to_json(x):
+    with open(x, 'w') as file:
+        json.dump(json_file, file, indent=4)
+
+# список компаний из json файла
+load_data_from_json('json_data/companies.json')
+companies_list = list(i.get('name') for i in json_file)
 
 def login():
     def login_user():
@@ -72,11 +86,12 @@ def register():
     register_window.mainloop()
 
 def main():
+    # поиск по типу самолёта и типу двигателя
     def search():
-        value = '%' + search_entry.get() + '%'
         main_table.delete(*main_table.get_children())
-        for i in cur.execute(f'SELECT * FROM planes WHERE plane_type LIKE ? OR engine_type LIKE ?', (value, value)):
-            main_table.insert('', 0, values=i)
+        for i in planes_list:
+            if search_entry.get() in i[0] or search_entry.get() in i[2]:
+                main_table.insert('', 0, values=i) 
     
     def analize():
         if main_table.focus():
@@ -85,11 +100,12 @@ def main():
             showinfo(message='Выберете самолёт')
     
     def delete():
-        items = main_table.item(main_table.focus()).get('values')
-        cur.execute('DELETE FROM planes WHERE plane_number = ?', (items[1],))
-        selected_item = main_table.selection()
-        main_table.delete(selected_item)
-        db.commit()
+        selected_item = main_table.item(main_table.focus()).get('values')
+        for i in json_file:
+            if i['plane_number'] == selected_item[1]:
+                json_file.remove(i)
+                main_table.delete(main_table.focus())
+                load_data_to_json('json_data/planes.json')
 
     main_window = Tk()
     main_window.geometry('+200+200')
@@ -98,17 +114,25 @@ def main():
     add_plane_btn = ttk.Button(main_window, text='Добавить самолёт', command=planes)
     delete_plane_btn = ttk.Button(main_window, text='Удалить самолёт', command=delete)
 
+    # таблица самолётов
     global main_table
-    main_table = ttk.Treeview(main_window, height=30, show='headings')
-    headers = ['Тип самолёта', '№ Самолёта', 'Тип двигателя', '№ Двигателя', '№ СУ', 'Дата установки', 'Наработка-час\цикл', 'Компания']
-    main_table['columns'] = headers
-
-    for header in headers:
-        main_table.heading(header, text=header)
-        main_table.column(header, anchor=CENTER)
+    main_table = ttk.Treeview(main_window, height=30, show='headings', columns=(1, 2, 3, 4, 5, 6, 7, 8))
+    main_table.heading(1, text='Тип самолёта')
+    main_table.heading(2, text='№ Самолёта')
+    main_table.heading(3, text='Тип двигателя')
+    main_table.heading(4, text='№ Двигателя')
+    main_table.heading(5, text='№ СУ')
+    main_table.heading(6, text='Дата установки')
+    main_table.heading(7, text='Наработка-час\цикл')
+    main_table.heading(8, text='Компания')
     
-    for value in cur.execute('SELECT * FROM planes').fetchall():
-        main_table.insert('', 0, values=value)
+    load_data_from_json('json_data/planes.json')
+    # список самолётов из json файла
+    planes_list = list((i['plane_type'], i['plane_number'], i['engine_type'], i['engine_number'], 
+    i['PU_position'], i['installation'], i['time_scince_installed'], i['company']) for i in json_file)
+
+    for i in planes_list:
+        main_table.insert('', 0, values=i)
     
     search_entry = ttk.Entry(main_window)
     search_btn = ttk.Button(main_window, text='Поиск', command=search)
@@ -127,27 +151,43 @@ def main():
 
 def companies():
     def add_company():
-        if companies_entry.get():
-            companies_list.insert(0, companies_entry.get())
-            companies_query.append(companies_entry.get())
-            cur.execute('INSERT INTO companies (name) VALUES (?)', (companies_entry.get(), ))
-            db.commit()
-            companies_entry.delete(0, END)
+        load_data_from_json('json_data/companies.json')
+        json_file.append({'name': companies_entry.get()})
+        companies_list.append(companies_entry.get())
+        companies_table.insert('', 0, values=(companies_entry.get(),))
+        load_data_to_json('json_data/companies.json')
+
+    # не добавлять числа!!!
+    def delete_company():
+        selected_item = companies_table.item(companies_table.focus()).get('values')[0]
+        load_data_from_json('json_data/companies.json')
+        for i in json_file:
+            if i['name'] == selected_item:
+                json_file.remove(i)
+                companies_list.remove(selected_item)
+                companies_table.delete(companies_table.focus())
+                load_data_to_json('json_data/companies.json')
 
     companies_window = Toplevel()
-    companies_window.title('Компании')
+    companies_window.title('Список компаний')
     companies_window.geometry('+900+300')
 
-    companies_list = Listbox(companies_window, width=50)
+    # список компаний
+    companies_table = ttk.Treeview(companies_window, columns=(1,), show='headings')
+    companies_table.heading(1, text='Компания')
+
+    # добавить новую компанию
     companies_entry = ttk.Entry(companies_window)
-    add_btn = ttk.Button(companies_window, text='Добавить', command=add_company)
+    add_company_btn = ttk.Button(companies_window, text='Добавить', command=add_company)
+    delete_company_btn = ttk.Button(companies_window, text='Удалить', command=delete_company)
 
-    for item in cur.execute('SELECT * FROM companies').fetchall():
-        companies_list.insert(0, item)
+    for i in companies_list:
+        companies_table.insert('', 0, values=(i,))
 
-    companies_list.grid(row=0, column=0, columnspan=5, padx=5, pady=5)
-    companies_entry.grid(row=1, column=0, sticky='we', columnspan=4, padx=5, pady=(0, 5))
-    add_btn.grid(row=1, column=4, sticky='we', padx=(0, 5), pady=(0, 5))
+    companies_table.grid(row=0, column=0, columnspan=6, padx=5, pady=5, sticky='we')
+    companies_entry.grid(row=1, column=0, sticky='we', columnspan=3, padx=5, pady=(0, 5))
+    add_company_btn.grid(row=1, column=4, sticky='we', padx=(0, 5), pady=(0, 5))
+    delete_company_btn.grid(row=1, column=5, sticky='we')
 
     companies_window.mainloop()
 
@@ -201,7 +241,7 @@ def planes():
     engine_number_label = ttk.Label(planes_window, text='№ Двигателя')
     engine_number_entry = ttk.Entry(planes_window)
     company_label = ttk.Label(planes_window, text='Компания')
-    company_enter = ttk.Combobox(planes_window, values=companies_query, width=17)
+    company_enter = ttk.Combobox(planes_window, values=companies_list, width=17)
     pu_position_label = ttk.Label(planes_window, text='№ СУ')
     pu_position_entry = ttk.Combobox(planes_window, values=(1, 2), width=17)
     installation_label = ttk.Label(planes_window, text='Дата установки')
@@ -303,16 +343,17 @@ def analisys():
         for row in query:
             names.append(row[0])
             lstsqrt.append(
-                ((float(w_result.get()) - float(row[2]))**2) / (1 + math.sqrt(float(row[2]))) +
-                ((float(ni_result.get()) - float(row[3]))**2) / (1 + math.sqrt(float(row[3]))) +
-                ((float(cr_result.get()) - float(row[4]))**2) / (1 + math.sqrt(float(row[4]))) +
-                ((float(mo_result.get()) - float(row[5]))**2) / (1 + math.sqrt(float(row[5]))) +
-                ((float(v_result.get()) - float(row[6]))**2) / (1 + math.sqrt(float(row[6])))
+                ((float(w_result.get()) - float(row[2]))**2) / (1 + sqrt(float(row[2]))) +
+                ((float(ni_result.get()) - float(row[3]))**2) / (1 + sqrt(float(row[3]))) +
+                ((float(cr_result.get()) - float(row[4]))**2) / (1 + sqrt(float(row[4]))) +
+                ((float(mo_result.get()) - float(row[5]))**2) / (1 + sqrt(float(row[5]))) +
+                ((float(v_result.get()) - float(row[6]))**2) / (1 + sqrt(float(row[6])))
             )
 
         percent = list(1 / x for x in lstsqrt)
         s = 100 / sum(percent)
         res = list(item * s for item in percent)
+        print(res)
 
         plt.bar(names, res)
         plt.show()
@@ -321,7 +362,7 @@ def analisys():
     analisys_window.title('Анализ стружки')
 
     engine_number = main_table.item(main_table.focus()).get('values')[3]
-    values = cur.execute('SELECT * FROM analisys WHERE engine_number = ?', (engine_number, )).fetchall()
+    values = cur.execute('SELECT * FROM analisys WHERE engine_number = ?', (engine_number, )).fetchone()
 
     base_label = ttk.Label(analisys_window, text='Основа')
     base_menu = ttk.Combobox(analisys_window, values=['Fe', 'Ni', 'Mo', 'V', 'W'], width=2)
@@ -383,21 +424,6 @@ def analisys():
     fon_mo_entry.grid(row=5, column=4, padx=2)
     fon_v_entry.grid(row=5, column=5, padx=2)
 
-    if values:
-        intensity_fe_entry.insert(0, values[0][0])
-        intensity_w_entry.insert(0, values[0][1])
-        intensity_ni_entry.insert(0, values[0][2])
-        intensity_cr_entry.insert(0, values[0][3])
-        intensity_mo_entry.insert(0, values[0][4])
-        intensity_v_entry.insert(0, values[0][5])
-        fon_fe_entry.insert(0, values[0][7])
-        fon_w_entry.insert(0, values[0][8])
-        fon_ni_entry.insert(0, values[0][9])
-        fon_cr_entry.insert(0, values[0][10])
-        fon_mo_entry.insert(0, values[0][11])
-        fon_v_entry.insert(0, values[0][12])
-
-
     measure_label = ttk.Label(analisys_window, text='Измерения')
     measure_fe_entry = ttk.Entry(analisys_window, width=10)
     measure_w_entry = ttk.Entry(analisys_window, width=10)
@@ -414,7 +440,6 @@ def analisys():
     measure_mo_entry.grid(row=7, column=4, padx=2)
     measure_v_entry.grid(row=7, column=5, padx=2)
 
-
     result_label = ttk.Label(analisys_window, text='Результат')
     fe_result = ttk.Entry(analisys_window, width=10)
     w_result = ttk.Entry(analisys_window, width=10)
@@ -430,6 +455,28 @@ def analisys():
     cr_result.grid(row=9, column=3, padx=2)
     mo_result.grid(row=9, column=4, padx=2)
     v_result.grid(row=9, column=5, padx=2)
+
+    if values:
+        intensity_fe_entry.insert(0, values[0])
+        intensity_w_entry.insert(0, values[1])
+        intensity_ni_entry.insert(0, values[2])
+        intensity_cr_entry.insert(0, values[3])
+        intensity_mo_entry.insert(0, values[4])
+        intensity_v_entry.insert(0, values[5])
+        fon_fe_entry.insert(0, values[6])
+        fon_w_entry.insert(0, values[7])
+        fon_ni_entry.insert(0, values[8])
+        fon_cr_entry.insert(0, values[9])
+        fon_mo_entry.insert(0, values[10])
+        fon_v_entry.insert(0, values[11])
+        measure_fe_entry.insert(0, values[13])
+        measure_w_entry.insert(0, values[14])
+        measure_ni_entry.insert(0, values[15])
+        measure_cr_entry.insert(0, values[16])
+        measure_mo_entry.insert(0, values[17])
+        measure_v_entry.insert(0, values[18])
+    
+    calculate()
 
     analisys_table = ttk.Treeview(analisys_window, show='headings')
     headings = [1, 2, 3, 4, 5, 6, 7]

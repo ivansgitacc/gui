@@ -8,15 +8,5 @@
         "installation": "19-02-2023",
         "time_scince_installed": 5,
         "company": "\u0410\u044d\u0440\u043e\u0444\u043b\u043e\u0442"
-    },
-    {
-        "plane_type": "B777",
-        "plane_number": 1,
-        "engine_type": "RR TRENT 1000",
-        "engine_number": 2,
-        "PU_position": 1,
-        "installation": "19-02-2023",
-        "time_scince_installed": 5,
-        "company": "\u0410\u044d\u0440\u043e\u0444\u043b\u043e\u0442"
     }
 ]

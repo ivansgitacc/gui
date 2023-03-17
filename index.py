@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 import sqlite3
 import json
+import os
 from math import sqrt
 import matplotlib
 from matplotlib.figure import Figure
@@ -310,54 +311,40 @@ def plane_types():
     plane_types_window.mainloop()
 
 def analisys():
-    def choose_values():
-        alloy_values_list()
-
     def calculate():
-        if intensity_fe_entry.get() and intensity_w_entry.get() and intensity_ni_entry.get() and intensity_cr_entry.get() and intensity_mo_entry.get() and \
-        intensity_v_entry.get() and fon_fe_entry.get() and fon_w_entry.get() and fon_ni_entry.get() and fon_cr_entry.get() and fon_mo_entry.get() and \
-        fon_v_entry.get() and measure_fe_entry.get() and measure_w_entry.get() and measure_ni_entry.get() and measure_cr_entry.get() and measure_mo_entry.get() and \
-        measure_v_entry.get():
-            fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
-            w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
-            ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
-            cr_differences = ((float(measure_cr_entry.get()) - float(fon_cr_entry.get())) / (float(intensity_cr_entry.get()) - float(fon_cr_entry.get()))) * 100
-            mo_differences = ((float(measure_mo_entry.get()) - float(fon_mo_entry.get())) / (float(intensity_mo_entry.get()) - float(fon_mo_entry.get()))) * 100
-            v_differences = ((float(measure_v_entry.get()) - float(fon_v_entry.get())) / (float(intensity_v_entry.get()) - float(fon_v_entry.get()))) * 100
+        fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
+        w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
+        ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
+        cr_differences = ((float(measure_cr_entry.get()) - float(fon_cr_entry.get())) / (float(intensity_cr_entry.get()) - float(fon_cr_entry.get()))) * 100
+        mo_differences = ((float(measure_mo_entry.get()) - float(fon_mo_entry.get())) / (float(intensity_mo_entry.get()) - float(fon_mo_entry.get()))) * 100
+        v_differences = ((float(measure_v_entry.get()) - float(fon_v_entry.get())) / (float(intensity_v_entry.get()) - float(fon_v_entry.get()))) * 100
 
-            differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences])
-            a = 100 / differences_sum
+        differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences])
+        a = 100 / differences_sum
 
-            fe = round(fe_differences * a, 2)
-            w = round(w_differences * a, 2)
-            ni = round(ni_differences * a, 2)
-            cr = round(cr_differences * a, 2)
-            mo = round(mo_differences * a, 2)
-            v = round(v_differences * a, 2)
+        fe = round(fe_differences * a, 2)
+        w = round(w_differences * a, 2)
+        ni = round(ni_differences * a, 2)
+        cr = round(cr_differences * a, 2)
+        mo = round(mo_differences * a, 2)
+        v = round(v_differences * a, 2)
 
-            fe_result.insert(0, fe)
-            w_result.insert(0, w)
-            ni_result.insert(0, ni)
-            cr_result.insert(0, cr)
-            mo_result.insert(0, mo)
-            v_result.insert (0, v)
+        fe_result.insert(0, fe)
+        w_result.insert(0, w)
+        ni_result.insert(0, ni)
+        cr_result.insert(0, cr)
+        mo_result.insert(0, mo)
+        v_result.insert (0, v)
 
-            analize()
+        analize()
 
     def analize():
-        query = cur.execute('SELECT * FROM alloy').fetchall()
-        lstsqrt = []
-        names = []
-
-        for row in query:
-            names.append(row[0])
-            lstsqrt.append(
-                ((float(w_result.get()) - float(row[2]))**2) / (1 + sqrt(float(row[2]))) +
-                ((float(ni_result.get()) - float(row[3]))**2) / (1 + sqrt(float(row[3]))) +
-                ((float(cr_result.get()) - float(row[4]))**2) / (1 + sqrt(float(row[4]))) +
-                ((float(mo_result.get()) - float(row[5]))**2) / (1 + sqrt(float(row[5]))) +
-                ((float(v_result.get()) - float(row[6]))**2) / (1 + sqrt(float(row[6])))
-            )
+        names = [row[0] for row in alloys_list]
+        lstsqrt = [((float(w_result.get())) - row[2]**2) / (1 + sqrt(row[2])) + 
+                   ((float(w_result.get())) - row[3]**2) / (1 + sqrt(row[3])) + 
+                   ((float(w_result.get())) - row[4]**2) / (1 + sqrt(row[4])) +
+                   ((float(w_result.get())) - row[5]**2) / (1 + sqrt(row[5])) +
+                   ((float(w_result.get())) - row[6]**2) / (1 + sqrt(row[6])) for row in alloys_list]
 
         percent = list(1 / x for x in lstsqrt)
         s = 100 / sum(percent)
@@ -365,35 +352,44 @@ def analisys():
         alloys_items = zip(names, res)
         
         alloys_items_sorted = sorted(alloys_items, key=lambda tup: tup[1])
+        global chosen_alloy
+        chosen_alloy = alloys_items_sorted[-1][0]
         
         font = {'size': 5}
 
         matplotlib.rc('font', **font)
-        figure = Figure(figsize=(6, 2), dpi=100)
+        figure = Figure(figsize=(8, 3), dpi=100)
         figure_canvas = FigureCanvasTkAgg(figure, analisys_window)
         axes = figure.add_subplot()
         axes.bar(names, res)
-        alloy_result_label = Label(analisys_window, text=f'{alloys_items_sorted[-1][0]}: {alloys_items_sorted[-1][1]}%', 
+        alloy_result_label = Label(analisys_window, text=f'Вероятный сплав: {chosen_alloy}: {alloys_items_sorted[-1][1]}%', 
         font='Arial 10', fg='red')
 
-        alloy_result_label.grid(row=13, column=0, columnspan=7)
-        figure_canvas.get_tk_widget().grid(row=14, column=0, columnspan=7)
+        alloy_result_label.grid(row=17, column=2, columnspan=7)
+        figure_canvas.get_tk_widget().grid(row=18, column=2, columnspan=7)
+    
+    # def open_file():
+    #     for file in os.listdir('files'):
+    #         if 'M50' in file:
+    #             os.startfile(f'files\{file}', 'edit')
 
     analisys_window = Toplevel()
     analisys_window.title('Анализ стружки')
+    analisys_window.geometry('+500+50')
 
+    
+    load_data_from_json('json_data/analysis.json')
+    measures_list = list((x['fe'], x['w'], x['ni'], x['cr'], x['mo'], x['v']) for x in json_file)
     load_data_from_json('json_data/alloys.json')
     alloys_list = list([(x['name'], x['fe'], x['w'], x['ni'], x['cr'], x['mo'], x['v']) for x in json_file])
 
-    submit_btn = ttk.Button(analisys_window, text='Измерить', command=calculate)
-    save_btn = ttk.Button(analisys_window, text='Выбрать', command=choose_values)
-    analize_btn = ttk.Button(analisys_window, text='Анализ', command=analize)
+    submit_btn = ttk.Button(analisys_window, text='Измерить')
+    open_btn = ttk.Button(analisys_window, text='Открыть')
 
-    analize_btn.grid(row=0, column=0)
-    submit_btn.grid(row=0, column=5)
-    save_btn.grid(row=0, column=3, columnspan=5)
+    submit_btn.grid(row=0, column=7, pady=10)
+    open_btn.grid(row=0, column=8)
 
-    # информация об операторе
+    # информация об самолёте
 
     plane_number_label = ttk.Label(analisys_window, text='Номер самолёта')
     plane_number_entry = ttk.Entry(analisys_window, width=10)
@@ -404,6 +400,32 @@ def analisys():
     engine_type_label = ttk.Label(analisys_window, text='Тип двигателя')
     engine_type_entry = ttk.Entry(analisys_window, width=10)
 
+    plane_number_label.grid(row=3, column=0)
+    plane_number_entry.grid(row=3, column=1)
+    su_number_label.grid(row=4, column=0)
+    su_number_entry.grid(row=4, column=1)
+    engine_number_label.grid(row=5, column=0)
+    engine_number_entry.grid(row=5, column=1)
+    engine_type_label.grid(row=6, column=0)
+    engine_type_entry.grid(row=6, column=1)
+
+    # информация об операторе
+
+    operator_label = ttk.Label(analisys_window, text='имя')
+    operator_entry = ttk.Entry(analisys_window)
+    date_label = ttk.Label(analisys_window, text='дата')
+    date_entry = ttk.Entry(analisys_window)
+
+    operator_label.grid(row=13, column=0)
+    operator_entry.grid(row=13, column=1)
+    date_label.grid(row=14, column=0)
+    date_entry.grid(row=14, column=1)
+
+    # описание
+
+    description = Text(analisys_window, width=30, height=10, border=2)
+    description.grid(row=18, column=0, columnspan=2, padx=10)
+
     # Интенсивность
 
     fe_label = ttk.Label(analisys_window, text='Fe')
@@ -413,28 +435,28 @@ def analisys():
     mo_label = ttk.Label(analisys_window, text='Mo')
     v_label = ttk.Label(analisys_window, text='V')
 
-    fe_label.grid(row=2, column=0)
-    w_label.grid(row=2, column=1)
-    ni_label.grid(row=2, column=2)
-    cr_label.grid(row=2, column=3)
-    mo_label.grid(row=2, column=4)
-    v_label.grid(row=2, column=5)
+    fe_label.grid(row=2, column=3)
+    w_label.grid(row=2, column=4)
+    ni_label.grid(row=2, column=5)
+    cr_label.grid(row=2, column=6)
+    mo_label.grid(row=2, column=7)
+    v_label.grid(row=2, column=8)
 
     intensity_label = ttk.Label(analisys_window, text='Интенсивность')
     intensity_fe_entry = ttk.Entry(analisys_window, width=10)
     intensity_w_entry = ttk.Entry(analisys_window, width=10)
     intensity_ni_entry = ttk.Entry(analisys_window, width=10)
-    intensity_cr_entry = ttk.Entry(analisys_window, width=10,)
+    intensity_cr_entry = ttk.Entry(analisys_window, width=10)
     intensity_mo_entry = ttk.Entry(analisys_window, width=10)
     intensity_v_entry = ttk.Entry(analisys_window, width=10)
 
-    intensity_label.grid(row=1, column=0, columnspan=7, pady=(20, 10))
-    intensity_fe_entry.grid(row=3, column=0, padx=(10, 2))
-    intensity_w_entry.grid(row=3, column=1, padx=2)
-    intensity_ni_entry.grid(row=3, column=2, padx=2)
-    intensity_cr_entry.grid(row=3, column=3, padx=2)
-    intensity_mo_entry.grid(row=3, column=4, padx=2)
-    intensity_v_entry.grid(row=3, column=5, padx=2)
+    intensity_label.grid(row=3, column=2)
+    intensity_fe_entry.grid(row=3, column=3, pady=5)
+    intensity_w_entry.grid(row=3, column=4)
+    intensity_ni_entry.grid(row=3, column=5)
+    intensity_cr_entry.grid(row=3, column=6)
+    intensity_mo_entry.grid(row=3, column=7)
+    intensity_v_entry.grid(row=3, column=8)
 
     intensity_fe_entry.insert(0, 532134)
     intensity_w_entry.insert(0, 153148)
@@ -453,13 +475,13 @@ def analisys():
     fon_mo_entry = ttk.Entry(analisys_window, width=10)
     fon_v_entry = ttk.Entry(analisys_window, width=10)
 
-    fon_label.grid(row=4, column=0, columnspan=7, pady=(20, 10))
-    fon_fe_entry.grid(row=5, column=0, padx=(10, 2))
-    fon_w_entry.grid(row=5, column=1, padx=2)
-    fon_ni_entry.grid(row=5, column=2, padx=2)
-    fon_cr_entry.grid(row=5, column=3, padx=2)
-    fon_mo_entry.grid(row=5, column=4, padx=2)
-    fon_v_entry.grid(row=5, column=5, padx=2)
+    fon_label.grid(row=4, column=2)
+    fon_fe_entry.grid(row=4, column=3, pady=5)
+    fon_w_entry.grid(row=4, column=4)
+    fon_ni_entry.grid(row=4, column=5)
+    fon_cr_entry.grid(row=4, column=6)
+    fon_mo_entry.grid(row=4, column=7)
+    fon_v_entry.grid(row=4, column=8)
 
     fon_fe_entry.insert(0, 67)
     fon_w_entry.insert(0, 189)
@@ -470,13 +492,6 @@ def analisys():
 
     # измерения
 
-    global measure_fe_entry
-    global measure_w_entry
-    global measure_ni_entry
-    global measure_cr_entry
-    global measure_mo_entry
-    global measure_v_entry
-
     measure_label = ttk.Label(analisys_window, text='Измерения')
     measure_fe_entry = ttk.Entry(analisys_window, width=10)
     measure_w_entry = ttk.Entry(analisys_window, width=10)
@@ -485,13 +500,20 @@ def analisys():
     measure_mo_entry = ttk.Entry(analisys_window, width=10)
     measure_v_entry = ttk.Entry(analisys_window, width=10)
 
-    measure_label.grid(row=6, columnspan=7, pady=(20, 10))
-    measure_fe_entry.grid(row=7, column=0, padx=(10, 2))
-    measure_w_entry.grid(row=7, column=1, padx=2)
-    measure_ni_entry.grid(row=7, column=2, padx=2)
-    measure_cr_entry.grid(row=7, column=3, padx=2)
-    measure_mo_entry.grid(row=7, column=4, padx=2)
-    measure_v_entry.grid(row=7, column=5, padx=2)
+    measure_label.grid(row=5, column=2)
+    measure_fe_entry.grid(row=5, column=3, pady=5)
+    measure_w_entry.grid(row=5, column=4)
+    measure_ni_entry.grid(row=5, column=5)
+    measure_cr_entry.grid(row=5, column=6)
+    measure_mo_entry.grid(row=5, column=7)
+    measure_v_entry.grid(row=5, column=8)
+
+    measure_fe_entry.insert(0, measures_list[-1][0])
+    measure_w_entry.insert(0, measures_list[-1][1])
+    measure_ni_entry.insert(0, measures_list[-1][2])
+    measure_cr_entry.insert(0, measures_list[-1][3])
+    measure_mo_entry.insert(0, measures_list[-1][4])
+    measure_v_entry.insert(0, measures_list[-1][5])
 
     # результат
 
@@ -503,35 +525,28 @@ def analisys():
     mo_result = ttk.Entry(analisys_window, width=10)
     v_result = ttk.Entry(analisys_window, width=10)
 
-    result_label.grid(row=8, columnspan=7, pady=(20, 10))
-    fe_result.grid(row=9, column=0, padx=(10, 2))
-    w_result.grid(row=9, column=1, padx=2)
-    ni_result.grid(row=9, column=2, padx=2)
-    cr_result.grid(row=9, column=3, padx=2)
-    mo_result.grid(row=9, column=4, padx=2)
-    v_result.grid(row=9, column=5, padx=2)
+    result_label.grid(row=6, column=2)
+    fe_result.grid(row=6, column=3, pady=5)
+    w_result.grid(row=6, column=4)
+    ni_result.grid(row=6, column=5)
+    cr_result.grid(row=6, column=6)
+    mo_result.grid(row=6, column=7)
+    v_result.grid(row=6, column=8)
+
+    calculate()
 
     analisys_table = ttk.Treeview(analisys_window, show='headings')
     headings = ['Название', 'Fe', 'W', 'Ni', 'Cr', 'M', 'V']
     analisys_table['columns'] = headings
 
     for heading in headings:
-        analisys_table.column(heading, width=75, anchor=CENTER)
+        analisys_table.column(heading, width=100, anchor=CENTER)
         analisys_table.heading(heading, text=heading)
     
     for i in alloys_list:
         analisys_table.insert('', 0, values=i)
 
-    analisys_table.grid(row=12, column=0, columnspan=6, pady=(20, 10), padx=10)
-
-    plane_number_label.grid(row=15, column=1)
-    plane_number_entry.grid(row=16, column=1, pady=(0, 10))
-    su_number_label.grid(row=15, column=2)
-    su_number_entry.grid(row=16, column=2, pady=(0, 10))
-    engine_number_label.grid(row=15, column=3)
-    engine_number_entry.grid(row=16, column=3, pady=(0, 10))
-    engine_type_label.grid(row=15, column=4)
-    engine_type_entry.grid(row=16, column=4, pady=(0, 10))
+    analisys_table.grid(row=12, column=2, columnspan=7, rowspan=4, padx=10, pady=10)
 
     main_table_items = main_table.item(main_table.focus()).get('values')
 
@@ -542,41 +557,6 @@ def analisys():
 
     analisys_window.mainloop()
 
-def alloy_values_list():
-    def select():
-        global selected_values
-        if selected_values:=analisys_table.item(analisys_table.focus()).get('values'):
-            measure_fe_entry.insert(0, selected_values[0])
-            measure_w_entry.insert(0, selected_values[1])
-            measure_ni_entry.insert(0, selected_values[2])
-            measure_cr_entry.insert(0, selected_values[3])
-            measure_mo_entry.insert(0, selected_values[4])
-            measure_v_entry.insert(0, selected_values[5])
-            values_window.destroy()
-
-    values_window = Toplevel()
-
-    global analisys_table
-    analisys_table = ttk.Treeview(values_window, show='headings')
-    headers = ['fe', 'w', 'ni', 'cr', 'mo', 'v']
-    analisys_table['columns'] = headers
-
-    for header in headers:
-        analisys_table.heading(header, text=header)
-        analisys_table.column(header, anchor=CENTER, width=75)
-    
-    load_data_from_json('json_data/analysis.json')
-    analisys_list = list([(x['fe'], x['w'], x['ni'], x['cr'], x['mo'], x['v']) for x in json_file])
-
-    for i in analisys_list:
-        analisys_table.insert('', 0, values=i)
-    
-    select_btn = ttk.Button(values_window, text='Выбрать', command=select)
-
-    analisys_table.pack()
-    select_btn.pack()
-
-    values_window.mainloop()
 
 if __name__ == '__main__':
     main()

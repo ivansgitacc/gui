@@ -8,7 +8,7 @@
         "engine_type": "RR TRENT 1000"
     },
     {
-        "plane_type": "a",
-        "engine_type": "b"
+        "plane_type": "A320",
+        "engine_type": "CFM56-5B"
     }
 ]

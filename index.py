@@ -1,7 +1,11 @@
 from tkinter import *
-from tkinter import ttk, filedialog
+from tkinter import filedialog
+import ttkbootstrap as ttk
 from tkinter.messagebox import showerror, showinfo
-import sqlite3, json, os, matplotlib
+import sqlite3
+import json
+import os
+import matplotlib
 from PIL import Image, ImageTk
 from math import sqrt
 from matplotlib.figure import Figure
@@ -11,20 +15,20 @@ from time import localtime
 db = sqlite3.connect('data.db')
 cur = db.cursor()
 
-# загрузка данный из json файла
+# Загрузка данный из json файла
 def load_data_from_json(x):
     global json_file
     with open(x, 'r', encoding='utf-8') as file:
         json_file = json.load(file)
 
-# загрузка данный в json файл
+# Загрузка данный в json файл
 def load_data_to_json(x):
     with open(x, 'w') as file:
         json.dump(json_file, file, indent=4)
 
-# список компаний из json файла
+# Список компаний из json файла
 load_data_from_json('json_data/companies.json')
-companies_list = list(i.get('name') for i in json_file)
+companies_list = list(i['name'] for i in json_file)
 
 def login():
     def login_user():
@@ -67,7 +71,7 @@ def register():
 
     register_window = Toplevel()
     register_window.title('Регистрация')
-    register_window.geometry('+800+350')
+    register_window.geometry('+1200+50')
 
     name_label = ttk.Label(register_window, text='Введите имя')
     name_entry = ttk.Entry(register_window)
@@ -107,59 +111,57 @@ def main():
                 main_table.delete(main_table.focus())
                 load_data_to_json('json_data/planes.json')
 
-    main_window = Tk()
-    main_window.geometry('+200+200')
+    main_window = ttk.Window(themename='simplex')
 
     companies_btn = ttk.Button(main_window, text='Список компаний', command=companies)
+    companies_btn.grid(row=0, column=0, pady=(10, 0))
+
     add_plane_btn = ttk.Button(main_window, text='Добавить самолёт', command=planes)
+    add_plane_btn.grid(row=0, column=1, pady=(10, 0))
+
+    search_entry = ttk.Entry(main_window)
+    search_entry.grid(row=0, column=28, pady=(10, 0))
+
+    search_btn = ttk.Button(main_window, text='Поиск', command=search)
+    search_btn.grid(row=0, column=29, pady=(10, 0))
 
     # Контекстное меню
     context_menu = Menu(main_window, tearoff=0)
-    context_menu.add_command(label='Сохранённые сплавы', command=saved_alloys)
-    context_menu.add_command(label='Анализ', command=analisys)
+    context_menu.add_command(label='Сохранённые сплавы', command=saved_results)
+    context_menu.add_command(label='Анализ', command=analysis)
     context_menu.add_separator()
     context_menu.add_command(label='Удалить', command=delete)
 
     # Таблица самолётов
     global main_table
-    main_table = ttk.Treeview(main_window, height=30, show='headings')
     headings = ['Тип самолёта', '№ Самолёта', 'Тип двигателя', '№ Двигателя', '№ СУ', 'дата установки', 'Наработка-час\цикл', 'Компания']
-    main_table['columns'] = headings
+    main_table = ttk.Treeview(main_window, height=30, show='headings', columns=headings)
 
     for header in headings:
         main_table.heading(header, text=header)
-        main_table.column(header, anchor=CENTER)
+        main_table.column(header, anchor=CENTER, width=150)
     
+    main_table.grid(row=1, column=0, columnspan=30, padx=10, pady=10)
     # Контекстное меню по кнопке
     main_table.bind('<Button-3>', show_menu)
 
-    load_data_from_json('json_data/planes.json')
-
     # Список самолётов из json файла
-    planes_list = list((i['plane_type'], i['plane_number'], i['engine_type'], i['engine_number'], 
-    i['PU_position'], i['installation'], i['time_scince_installed'], i['company']) for i in json_file)
-
-    for i in planes_list:
-        main_table.insert('', 0, values=i)
+    load_data_from_json('json_data/planes.json')
+    planes_list = [tuple(i.values()) for i in json_file]
     
-    search_entry = ttk.Entry(main_window)
-    search_btn = ttk.Button(main_window, text='Поиск', command=search)
-
-    companies_btn.grid(row=0, column=0)
-    add_plane_btn.grid(row=0, column=1)
-    search_entry.grid(row=0, column=18)
-    search_btn.grid(row=0, column=19)
-    main_table.grid(row=1, column=0, columnspan=20, pady=5, padx=5)
+    for item in planes_list:
+        main_table.insert('', 0, values=item)
 
     main_window.mainloop()
 
 def companies():
     def add_company():
         load_data_from_json('json_data/companies.json')
-        json_file.append({'name': companies_entry.get()})
-        companies_list.append(companies_entry.get())
-        companies_table.insert('', 0, values=(companies_entry.get(),))
+        json_file.append({'name': add_company_entry.get()})
+        companies_list.append(add_company_entry.get())
+        companies_table.insert('', 0, values=(add_company_entry.get(),))
         load_data_to_json('json_data/companies.json')
+        add_company_entry.delete(0, END)
 
     # не добавлять числа!!!
     def delete_company():
@@ -171,27 +173,35 @@ def companies():
                 companies_list.remove(selected_item)
                 companies_table.delete(companies_table.focus())
                 load_data_to_json('json_data/companies.json')
+    
+    def show_menu(event):
+        if companies_table.focus():
+            context_menu.tk_popup(event.x_root, event.y_root)
 
     companies_window = Toplevel()
     companies_window.title('Список компаний')
-    companies_window.geometry('+900+300')
 
     # Список компаний
-    companies_table = ttk.Treeview(companies_window, columns=(1,), show='headings')
-    companies_table.heading(1, text='Компания')
+    companies_table = ttk.Treeview(companies_window, columns=(1,), show='headings', height=15)
+    companies_table.heading(1, text='Название')
+    companies_table.column(1, anchor=CENTER)
+    companies_table.grid(row=0, column=0, columnspan=2)
+    companies_table.bind('<Button-3>', show_menu)
 
     # Добавить новую компанию
-    companies_entry = ttk.Entry(companies_window)
+    add_company_entry = ttk.Entry(companies_window)
+    add_company_entry.grid(row=1, column=0, pady=10, padx=(5, 0))
+
     add_company_btn = ttk.Button(companies_window, text='Добавить', command=add_company)
-    delete_company_btn = ttk.Button(companies_window, text='Удалить', command=delete_company)
+    add_company_btn.grid(row=1, column=1, padx=(0, 5))
+    
+    # Контекстное меню
+    context_menu = Menu(companies_window, tearoff=0)
+    context_menu.add_command(label='Удалить', command=delete_company)
 
     for i in companies_list:
         companies_table.insert('', 0, values=(i,))
 
-    companies_table.grid(row=0, column=0, columnspan=6, padx=5, pady=5, sticky='we')
-    companies_entry.grid(row=1, column=0, sticky='we', columnspan=3, padx=5, pady=(0, 5))
-    add_company_btn.grid(row=1, column=4, sticky='we', padx=(0, 5), pady=(0, 5))
-    delete_company_btn.grid(row=1, column=5, sticky='we')
 
     companies_window.mainloop()
 
@@ -199,7 +209,7 @@ def planes():
     def add_plane():
         types = planes_table.item(planes_table.focus()).get('values') # тип самолёта и двигателя из таблицы
         if types and plane_number_entry.get() and engine_number_entry.get() and pu_position_entry.get() and \
-        installation_entry.get() and time_scince_installed_entry.get() and company_enter.get():
+        installation_entry.get() and time_scince_installed_entry.get() and company_combobox.get():
             main_table.insert('', 0, values=(
                 types[0], 
                 plane_number_entry.get(), 
@@ -208,7 +218,7 @@ def planes():
                 pu_position_entry.get(), 
                 installation_entry.get(), 
                 time_scince_installed_entry.get(), 
-                company_enter.get()
+                company_combobox.get()
             ))
             # PU_position = № СУ, installation = дата установки, time_scince_installed = наработка
             load_data_from_json('json_data/planes.json')
@@ -221,7 +231,7 @@ def planes():
                     'PU_position': pu_position_entry.get(),
                     'installation': installation_entry.get(),
                     'time_scince_installed': time_scince_installed_entry.get(),
-                    'company': company_enter.get()
+                    'company': company_combobox.get()
                 }
             )
             load_data_to_json('json_data/planes.json')
@@ -229,62 +239,81 @@ def planes():
             showerror(message='Вы не выбрали тип самолёта')
     
     def delete_plane_type():
-        if planes_table.item(planes_table.focus()).get('values'):
-            pass
-        else:
-            showerror(message='Вы не выбрали тип самолёта')
+        selected_item = planes_table.item(planes_table.focus()).get('values')
+        for plane_type in json_file:
+            if plane_type['plane_type'] == selected_item[0] and plane_type['engine_type'] == selected_item[1]:
+                json_file.remove(plane_type)
+                planes_table.delete(planes_table.focus())
+                load_data_to_json('json_data/plane_types.json')
+    
+    def show_menu(event):
+        if planes_table.focus():
+            context_menu.tk_popup(event.x_root, event.y_root)
 
     planes_window = Toplevel()
     planes_window.title('Главная')
-    planes_window.geometry('+700+300')
+
+    # Контекстное меню
+    context_menu = Menu(planes_window, tearoff=0)
+    context_menu.add_command(label='Удалить', command=delete_plane_type)
 
     global planes_table
-    planes_table = ttk.Treeview(planes_window, show='headings')
-    headers = ['Тип самолёта', 'Тип двигателя']
-    planes_table['columns'] = headers
+    headings = ['Тип самолёта', 'Тип двигателя']
+    planes_table = ttk.Treeview(planes_window, show='headings', columns=headings)
+    planes_table.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
+    planes_table.bind('<Button-3>', show_menu)
 
-    for header in headers:
-        planes_table.heading(header, text=header)
-        planes_table.column(header, anchor=CENTER)
+    for heading in headings:
+        planes_table.heading(heading, text=heading)
+        planes_table.column(heading, anchor=CENTER)
     
+    # Список типов самолёта из json файла
     load_data_from_json('json_data/plane_types.json')
-    for i in json_file:
-        planes_table.insert('', 0, values=(i.get('plane_type'), i.get('engine_type')))
+
+    for item in json_file:
+        planes_table.insert('', 0, values=(item['plane_type'], item['engine_type']))
 
     plane_number_label = ttk.Label(planes_window, text='№ Самолёта')
-    plane_number_entry = ttk.Entry(planes_window)
-    engine_number_label = ttk.Label(planes_window, text='№ Двигателя')
-    engine_number_entry = ttk.Entry(planes_window)
-    company_label = ttk.Label(planes_window, text='Компания')
-    company_enter = ttk.Combobox(planes_window, values=companies_list, width=17)
-    pu_position_label = ttk.Label(planes_window, text='№ СУ')
-    pu_position_entry = ttk.Combobox(planes_window, values=(1, 2), width=17)
-    installation_label = ttk.Label(planes_window, text='Дата установки')
-    installation_entry = ttk.Entry(planes_window)
-    time_scince_installed_label = ttk.Label(planes_window, text='Наработка')
-    time_scince_installed_entry = ttk.Entry(planes_window)
-    
-    add_type_btn = ttk.Button(planes_window, text='Новый тип', command=plane_types)
-    add_plane_btn = ttk.Button(planes_window, text='Добавить', command=add_plane)
-    delete_type_btn = ttk.Button(planes_window, text='Удалить', command=delete_plane_type)
-
-    planes_table.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
     plane_number_label.grid(row=1, column=0)
-    plane_number_entry.grid(row=2, column=0)
-    engine_number_label.grid(row=1, column=1)
-    engine_number_entry.grid(row=2, column=1)
-    company_label.grid(row=1, column=2)
-    company_enter.grid(row=2, column=2)
-    pu_position_label.grid(row=3, column=0)
-    pu_position_entry.grid(row=4, column=0)
-    installation_label.grid(row=3, column=1)
-    installation_entry.grid(row=4, column=1)
-    time_scince_installed_label.grid(row=3, column=2)
-    time_scince_installed_entry.grid(row=4, column=2)
 
-    add_type_btn.grid(row=5, column=0, pady=20)
-    add_plane_btn.grid(row=5, column=1)
-    delete_type_btn.grid(row=5, column=2)
+    plane_number_entry = ttk.Entry(planes_window)
+    plane_number_entry.grid(row=2, column=0)
+
+    engine_number_label = ttk.Label(planes_window, text='№ Двигателя')
+    engine_number_label.grid(row=1, column=1)
+
+    engine_number_entry = ttk.Entry(planes_window)
+    engine_number_entry.grid(row=2, column=1)
+
+    company_label = ttk.Label(planes_window, text='Компания')
+    company_label.grid(row=1, column=2)
+
+    company_combobox = ttk.Combobox(planes_window, values=companies_list, width=17, state='readonly')
+    company_combobox.grid(row=2, column=2)
+
+    pu_position_label = ttk.Label(planes_window, text='№ СУ')
+    pu_position_label.grid(row=3, column=0)
+
+    pu_position_entry = ttk.Combobox(planes_window, values=(1, 2), width=17, state='readonly')
+    pu_position_entry.grid(row=4, column=0)
+
+    installation_label = ttk.Label(planes_window, text='Дата установки')
+    installation_label.grid(row=3, column=1)
+
+    installation_entry = ttk.Entry(planes_window)
+    installation_entry.grid(row=4, column=1)
+
+    time_scince_installed_label = ttk.Label(planes_window, text='Наработка')
+    time_scince_installed_label.grid(row=3, column=2)
+
+    time_scince_installed_entry = ttk.Entry(planes_window)
+    time_scince_installed_entry.grid(row=4, column=2)
+    
+    add_plane_btn = ttk.Button(planes_window, text='Добавить', command=add_plane)
+    add_plane_btn.grid(row=5, column=0, columnspan=3, pady=10)
+
+    add_type_btn = ttk.Button(planes_window, text='Новый тип', command=plane_types)
+    add_type_btn.grid(row=6, column=0, columnspan=3, pady=(0, 10))
 
     planes_window.mainloop()
 
@@ -298,7 +327,6 @@ def plane_types():
 
     plane_types_window = Toplevel()
     plane_types_window.title('Добавить новый тип')
-    plane_types_window.geometry('+800+450')
 
     plane_type_label = ttk.Label(plane_types_window, text='Тип самолёта')
     plane_type_entry = ttk.Entry(plane_types_window)
@@ -314,8 +342,9 @@ def plane_types():
 
     plane_types_window.mainloop()
 
-def analisys():
-    def calculate():
+
+def analysis():
+    def measure():
         fe_differences = ((float(measure_fe_entry.get()) - float(fon_fe_entry.get())) / (float(intensity_fe_entry.get()) - float(fon_fe_entry.get()))) * 100
         w_differences = ((float(measure_w_entry.get()) - float(fon_w_entry.get())) / (float(intensity_w_entry.get()) - float(fon_w_entry.get()))) * 100
         ni_differences = ((float(measure_ni_entry.get()) - float(fon_ni_entry.get())) / (float(intensity_ni_entry.get()) - float(fon_ni_entry.get()))) * 100
@@ -326,189 +355,244 @@ def analisys():
         differences_sum = sum([fe_differences, w_differences, ni_differences, cr_differences, mo_differences, v_differences])
         a = 100 / differences_sum
 
-        fe = round(fe_differences * a, 2)
-        w = round(w_differences * a, 2)
-        ni = round(ni_differences * a, 2)
-        cr = round(cr_differences * a, 2)
-        mo = round(mo_differences * a, 2)
-        v = round(v_differences * a, 2)
+        fe_rounded = round(fe_differences * a, 2)
+        w_rounded = round(w_differences * a, 2)
+        ni_rounded = round(ni_differences * a, 2)
+        cr_rounded = round(cr_differences * a, 2)
+        mo_rounded = round(mo_differences * a, 2)
+        v_rounded = round(v_differences * a, 2)
 
-        fe_result.delete(0, END)
-        w_result.delete(0, END)
-        ni_result.delete(0, END)
-        cr_result.delete(0, END)
-        mo_result.delete(0, END)
-        v_result.delete(0, END)
+        result_fe_entry.delete(0, END)
+        result_w_entry.delete(0, END)
+        result_ni_entry.delete(0, END)
+        result_cr_entry.delete(0, END)
+        result_mo_entry.delete(0, END)
+        result_v_entry.delete(0, END)
 
-        fe_result.insert(0, fe)
-        w_result.insert(0, w)
-        ni_result.insert(0, ni)
-        cr_result.insert(0, cr)
-        mo_result.insert(0, mo)
-        v_result.insert (0, v)
+        result_fe_entry.insert(0, fe_rounded)
+        result_w_entry.insert(0, w_rounded)
+        result_ni_entry.insert(0, ni_rounded)
+        result_cr_entry.insert(0, cr_rounded)
+        result_mo_entry.insert(0, mo_rounded)
+        result_v_entry.insert(0, v_rounded)
 
-        analize()
-
-    def analize():
-        names = [row[0] for row in alloys_list]
-        lstsqrt = [
-            (pow((float(w_result.get()) - row[2]), 2)) / (1 + sqrt(row[2])) +
-            (pow((float(ni_result.get()) - row[3]), 2)) / (1 + sqrt(row[3])) +
-            (pow((float(cr_result.get()) - row[4]), 2)) / (1 + sqrt(row[4])) +
-            (pow((float(mo_result.get()) - row[5]), 2)) / (1 + sqrt(row[5])) +
-            (pow((float(v_result.get()) - row[6]), 2)) / (1 + sqrt(row[6])) for row in alloys_list
-        ]
-        
-        percent = list(1 / x for x in lstsqrt)
-        s = 100 / sum(percent)
-        res = list(item * s for item in percent)
-        alloys_items = zip(names, res)
-        
-        alloys_items_sorted = sorted(alloys_items, key=lambda tup: tup[1])
-        global chosen_alloy
-        chosen_alloy = alloys_items_sorted[-1][0]
-        
-        font = {'size': 5}
-
-        matplotlib.rc('font', **font)
-        figure = Figure(figsize=(8, 3), dpi=100)
-        figure_canvas = FigureCanvasTkAgg(figure, analisys_window)
-        axes = figure.add_subplot()
-        axes.barh(names, res)
-
-        chosen_alloy_label_frame = LabelFrame(analisys_window, text='выбран сплав')
-        chosen_alloy_label_frame.grid(row=17, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
-
-        global alloy_result_table
-        alloy_result_table = ttk.Treeview(chosen_alloy_label_frame, show='headings', height=1)
-        headings = ['Название', 'Fe', 'W', 'Ni', 'Cr', 'M', 'V']
-        alloy_result_table['columns'] = headings
-
-        for heading in headings:
-            alloy_result_table.column(heading, width=100, anchor=CENTER)
-            alloy_result_table.heading(heading, text=heading)
+        least_squares = []
 
         for alloy in alloys_list:
-            if chosen_alloy == alloy[0]:
-                alloy_result_table.insert('', 0, values=alloy)
+            least_square = \
+            (pow((float(result_w_entry.get()) - alloy[2]), 2)) / (1 + sqrt(alloy[2])) + \
+            (pow((float(result_ni_entry.get()) - alloy[3]), 2)) / (1 + sqrt(alloy[3])) + \
+            (pow((float(result_cr_entry.get()) - alloy[4]), 2)) / (1 + sqrt(alloy[4])) + \
+            (pow((float(result_mo_entry.get()) - alloy[5]), 2)) / (1 + sqrt(alloy[5])) + \
+            (pow((float(result_v_entry.get()) - alloy[6]), 2)) / (1 + sqrt(alloy[6]))
 
-        alloy_result_table.grid(row=17, column=2, columnspan=7, padx=10, pady=10)
-        figure_canvas.get_tk_widget().grid(row=20, column=2, columnspan=7)
-    
+            least_squares.append(least_square)
+                
+        percent = list(1 / x for x in least_squares)
+        x = 100 / sum(percent)
+        result = list(item * x for item in percent)
+
+        names = [alloy[0] for alloy in alloys_list]
+        alloys_items = sorted(list(zip(names, result)), key=lambda x: x[1], reverse=True)
+        
+        for item in alloys_list:
+            if item[0] == alloys_items[0][0]:
+                selected_alloy_table.insert('', 0, values=item)
+
+        # График
+        font = {'size': 6}
+        matplotlib.rc('font', **font)
+
+        figure = Figure(figsize=(7, 3), dpi=100)
+        global figure_canvas
+        figure_canvas = FigureCanvasTkAgg(figure, analysis_window)
+        axes = figure.add_subplot()
+        axes.barh(names, result, color='red')
+
+        chosen_alloy_label_frame = LabelFrame(analysis_window, text='Выбран сплав')
+        chosen_alloy_label_frame.grid(row=17, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
+
+        figure_canvas.get_tk_widget().grid(row=8, column=2, columnspan=7)
+
+        save_btn['state'] = 'enabled'
+
+    def load_photo():
+        nonlocal selected_photo
+        selected_photo = filedialog.askopenfilename()
+        img = Image.open(selected_photo)
+        img = img.resize((384, 216))
+        img = ImageTk.PhotoImage(img)
+        photo_canvas.create_image(0, 0, anchor=NW, image=img)
+        description.insert(1, selected_photo)
+
+    def save_result():
+        load_data_from_json('json_data/saved_results.json')
+        json_file.append({
+            'date': f'{localtime()[2]}/{localtime()[1]}/{localtime()[0]} {localtime()[3]}:{localtime()[4]}:{localtime()[5]}',
+            'description': description.get(1.0, END),
+            'photo': selected_photo,
+            'alloy_result': {
+                'fe': result_fe_entry.get(),
+                'w': result_w_entry.get(),
+                'ni': result_ni_entry.get(),
+                'cr': result_cr_entry.get(),
+                'mo': result_mo_entry.get(),
+                'v': result_v_entry.get()
+            },
+            'plane_number': plane_number_entry.get(),
+            'su_number': su_number_entry.get(),
+            'engine_number': engine_number_entry.get(),
+            'engine_type': engine_type_entry.get(),
+            'selected_alloy': selected_alloy_table.item(selected_alloy_table.get_children())['values'][0]
+        })
+
+        load_data_to_json('json_data/saved_results.json')
+
+        photo_canvas.delete('all')
+        description.delete('1.0', END)
+        figure_canvas.get_tk_widget().grid_forget()
+        save_btn['state'] = 'disabled'
+
     def open_file():
         for file in os.listdir('files'):
-            if file[:-4] in chosen_alloy:
+            if file[:-4] in selected_alloy_table.item(selected_alloy_table.focus())['values'][0]:
                 os.startfile(f'files\{file}', 'edit')
     
-    def save_alloy():
-        load_data_from_json('json_data/saved_alloys.json')
-        json_file.append({
-            'date': f'{time[2]}/{time[1]}/{time[0]} {time[3]}:{time[4]}:{time[5]}',
-            'description': description.get(1.0, END),
-            'photo': chosen_photo,
-        })
-        load_data_to_json('json_data/saved_alloys.json')
-    
-    def choose_photo():
-        nonlocal chosen_photo
-        chosen_photo = filedialog.askopenfilename()
-    
-    analisys_window = Toplevel()
-    analisys_window.title('Анализ стружки')
-    analisys_window.geometry('+500+30')
-    
-    load_data_from_json('json_data/analysis.json')
-    measures_list = list((x['fe'], x['w'], x['ni'], x['cr'], x['mo'], x['v']) for x in json_file)
-    load_data_from_json('json_data/alloys.json')
-    alloys_list = list([(x['name'], x['fe'], x['w'], x['ni'], x['cr'], x['mo'], x['v']) for x in json_file])
+    def show_menu(event):
+        if selected_alloy_table.focus():
+            context_menu.tk_popup(event.x_root, event.y_root)
 
-    submit_btn = ttk.Button(analisys_window, text='Измерить', command=calculate)
-    open_btn = ttk.Button(analisys_window, text='Открыть', command=open_file)
-    save_btn = ttk.Button(analisys_window, text='сохранить', command=save_alloy)
+    analysis_window = Toplevel()
 
-    submit_btn.grid(row=0, column=7, pady=10)
-    open_btn.grid(row=19, column=2)
-    save_btn.grid(row=0, column=8)
+    save_btn = ttk.Button(analysis_window, text='Сохранить', command=save_result, state='disabled')
+    save_btn.grid(row=0, column=8, pady=(10, 0))
 
-    # Информация об самолёте
+    measure_btn = ttk.Button(analysis_window, text='Измерить', command=measure)
+    measure_btn.grid(row=0, column=7, pady=(10, 0))
 
-    plane_info_label_frame = LabelFrame(analisys_window, text='Данные двигателя')
-    plane_info_label_frame.grid(row=2, column=0, rowspan=4, columnspan=2, sticky='wens', padx=10, pady=10)
-    plane_number_label = ttk.Label(plane_info_label_frame, text='Номер самолёта')
-    plane_number_entry = ttk.Entry(plane_info_label_frame, width=10)
-    su_number_label = ttk.Label(plane_info_label_frame, text='Номер СУ')
-    su_number_entry = ttk.Entry(plane_info_label_frame, width=10)
-    engine_number_label = ttk.Label(plane_info_label_frame, text='Номер двигателя')
-    engine_number_entry = ttk.Entry(plane_info_label_frame, width=10)
-    engine_type_label = ttk.Label(plane_info_label_frame, text='Тип двигателя')
-    engine_type_entry = ttk.Entry(plane_info_label_frame, width=10)
+    # Информация о самолёте
+    plane_df = ttk.LabelFrame(analysis_window, text='Данные двигателя')
+    plane_df.grid(row=1, column=0, rowspan=5, columnspan=2, sticky='wens', padx=10, pady=10)
 
-    plane_number_label.grid(row=3, column=0)
-    plane_number_entry.grid(row=3, column=1)
-    su_number_label.grid(row=4, column=0)
-    su_number_entry.grid(row=4, column=1)
-    engine_number_label.grid(row=5, column=0)
-    engine_number_entry.grid(row=5, column=1)
-    engine_type_label.grid(row=6, column=0)
-    engine_type_entry.grid(row=6, column=1)
+    plane_number_label = ttk.Label(plane_df, text='Номер самолёта')
+    plane_number_label.grid(row=1, column=0, pady=5)
 
-    # Информация об операторе
+    plane_number_entry = ttk.Entry(plane_df, width=15)
+    plane_number_entry.grid(row=1, column=1, pady=5)
 
-    operator_label = ttk.Label(analisys_window, text='Дасковский')
-    time = localtime()
-    date_label = ttk.Label(analisys_window, text=f'{time[2]}/{time[1]}/{time[0]}')
+    su_number_label = ttk.Label(plane_df, text='Номер СУ')
+    su_number_label.grid(row=2, column=0, pady=5)
 
-    operator_label.grid(row=0, column=0)
-    date_label.grid(row=0, column=1)
+    su_number_entry = ttk.Entry(plane_df, width=15)
+    su_number_entry.grid(row=2, column=1, pady=5)
 
-    # Выбрать фото
+    engine_number_label = ttk.Label(plane_df, text='Номер двигателя')
+    engine_number_label.grid(row=3, column=0, pady=(5, 0))
 
-    choose_photo_btn = ttk.Button(analisys_window, text='Выбрать фото', command=choose_photo)
-    chosen_photo = None
+    engine_number_entry = ttk.Entry(plane_df, width=15)
+    engine_number_entry.grid(row=3, column=1, pady=(5, 0))
 
-    choose_photo_btn.grid(row=12, rowspan=4, column=0, columnspan=2)
+    engine_type_label = ttk.Label(plane_df, text='Тип двигателя')
+    engine_type_label.grid(row=4, column=0, pady=5)
 
-    # Описание
+    engine_type_entry = ttk.Entry(plane_df, width=15)
+    engine_type_entry.grid(row=4, column=1, pady=5)
 
-    description_label_frame = LabelFrame(analisys_window, text='Описание')
-    description_label_frame.grid(row=20, column=0, columnspan=2, sticky='wens', padx=10, pady=10)
-    description = Text(description_label_frame, width=30, height=15, border=2)
-    description.grid(row=18, column=0, columnspan=2, padx=10)
+    # Информация из основной таблицы
+    main_table_items = main_table.item(main_table.focus())['values']
+
+    plane_number_entry.insert(0, main_table_items[1])
+    su_number_entry.insert(0, main_table_items[4])
+    engine_number_entry.insert(0, main_table_items[3])
+    engine_type_entry.insert(0, main_table_items[2])
+
+    # Материалы основы
+    base_df = ttk.LabelFrame(analysis_window, text='Материалы основы')
+    base_df.grid(row=1, column=2, rowspan=5, columnspan=7, padx=10, pady=10, sticky='we')
+
+    fe_label = ttk.Label(base_df, text='Fe')
+    fe_label.grid(row=1, column=3)
+
+    w_label = ttk.Label(base_df, text='W')
+    w_label.grid(row=1, column=4)
+
+    ni_label = ttk.Label(base_df, text='Ni')
+    ni_label.grid(row=1, column=5)
+
+    cr_label = ttk.Label(base_df, text='Cr')
+    cr_label.grid(row=1, column=6)
+
+    mo_label = ttk.Label(base_df, text='Mo')
+    mo_label.grid(row=1, column=7)
+
+    v_label = ttk.Label(base_df, text='V')
+    v_label.grid(row=1, column=8)
 
     # Интенсивность
+    intensity_label = ttk.Label(base_df, text='Интенсивность')
+    intensity_label.grid(row=2, column=2)
 
-    base = LabelFrame(analisys_window, text='Материалы основы')
-    base.grid(row=2, column=2, rowspan=4, columnspan=6, sticky='wens', padx=10, pady=10)
+    intensity_fe_entry = ttk.Entry(base_df, width=14)
+    intensity_fe_entry.grid(row=2, column=3, padx=(10, 0))
 
-    fe_label = ttk.Label(base, text='Fe')
-    w_label = ttk.Label(base, text='W')
-    ni_label = ttk.Label(base, text='Ni')
-    cr_label = ttk.Label(base, text='Cr')
-    mo_label = ttk.Label(base, text='Mo')
-    v_label = ttk.Label(base, text='V')
+    intensity_w_entry = ttk.Entry(base_df, width=14)
+    intensity_w_entry.grid(row=2, column=4, padx=(5, 0))
 
-    fe_label.grid(row=2, column=3)
-    w_label.grid(row=2, column=4)
-    ni_label.grid(row=2, column=5)
-    cr_label.grid(row=2, column=6)
-    mo_label.grid(row=2, column=7)
-    v_label.grid(row=2, column=8)
+    intensity_ni_entry = ttk.Entry(base_df, width=14)
+    intensity_ni_entry.grid(row=2, column=5, padx=(5, 0))
 
-    intensity_label = ttk.Label(base, text='Интенсивность')
-    intensity_fe_entry = ttk.Entry(base, width=15)
-    intensity_w_entry = ttk.Entry(base, width=15)
-    intensity_ni_entry = ttk.Entry(base, width=15)
-    intensity_cr_entry = ttk.Entry(base, width=15)
-    intensity_mo_entry = ttk.Entry(base, width=15)
-    intensity_v_entry = ttk.Entry(base, width=15)
+    intensity_cr_entry = ttk.Entry(base_df, width=14)
+    intensity_cr_entry.grid(row=2, column=6, padx=(5, 0))
 
-    intensity_label.grid(row=3, column=2, padx=(0, 30))
-    intensity_fe_entry.grid(row=3, column=3, pady=5)
-    intensity_w_entry.grid(row=3, column=4)
-    intensity_ni_entry.grid(row=3, column=5)
-    intensity_cr_entry.grid(row=3, column=6)
-    intensity_mo_entry.grid(row=3, column=7)
-    intensity_v_entry.grid(row=3, column=8)
+    intensity_mo_entry = ttk.Entry(base_df, width=14)
+    intensity_mo_entry.grid(row=2, column=7, padx=5)
+
+    intensity_v_entry = ttk.Entry(base_df, width=14)
+    intensity_v_entry.grid(row=2, column=8, padx=(0, 10))
+
+    # Фон
+    fon_label = ttk.Label(base_df, text='Фон')
+    fon_label.grid(row=3, column=2, pady=(5, 0))
+
+    fon_fe_entry = ttk.Entry(base_df, width=14)
+    fon_fe_entry.grid(row=3, column=3, padx=(10, 0), pady=(5, 0))
+
+    fon_w_entry = ttk.Entry(base_df, width=14)
+    fon_w_entry.grid(row=3, column=4, padx=(5, 0), pady=(5, 0))
+
+    fon_ni_entry = ttk.Entry(base_df, width=14)
+    fon_ni_entry.grid(row=3, column=5, padx=(5, 0), pady=(5, 0))
+
+    fon_cr_entry = ttk.Entry(base_df, width=14)
+    fon_cr_entry.grid(row=3, column=6, padx=(5, 0), pady=(5, 0))
+
+    fon_mo_entry = ttk.Entry(base_df, width=14)
+    fon_mo_entry.grid(row=3, column=7, padx=5, pady=(5, 0))
+
+    fon_v_entry = ttk.Entry(base_df, width=14)
+    fon_v_entry.grid(row=3, column=8, padx=(0, 10), pady=(5, 0))
+
+    # Измерения
+    measure_label = ttk.Label(base_df, text='Измерения')
+    measure_label.grid(row=4, column=2)
+
+    measure_fe_entry = ttk.Entry(base_df, width=14)
+    measure_fe_entry.grid(row=4, column=3, padx=(10, 0), pady=5)
+
+    measure_w_entry = ttk.Entry(base_df, width=14)
+    measure_w_entry.grid(row=4, column=4, padx=(5, 0), pady=5)
+
+    measure_ni_entry = ttk.Entry(base_df, width=14)
+    measure_ni_entry.grid(row=4, column=5, padx=(5, 0), pady=5)
+
+    measure_cr_entry = ttk.Entry(base_df, width=14)
+    measure_cr_entry.grid(row=4, column=6, padx=(5, 0), pady=5)
+
+    measure_mo_entry = ttk.Entry(base_df, width=14)
+    measure_mo_entry.grid(row=4, column=7, padx=5, pady=5)
+
+    measure_v_entry = ttk.Entry(base_df, width=14)
+    measure_v_entry.grid(row=4, column=8, padx=(0, 10), pady=5)
 
     intensity_fe_entry.insert(0, 532134)
     intensity_w_entry.insert(0, 153148)
@@ -517,24 +601,6 @@ def analisys():
     intensity_mo_entry.insert(0, 76710)
     intensity_v_entry.insert(0, 335563)
 
-    # Фон
-
-    fon_label = Label(base, text='Фон')
-    fon_fe_entry = ttk.Entry(base, width=15)
-    fon_w_entry = ttk.Entry(base, width=15)
-    fon_ni_entry = ttk.Entry(base, width=15)
-    fon_cr_entry = ttk.Entry(base, width=15)
-    fon_mo_entry = ttk.Entry(base, width=15)
-    fon_v_entry = ttk.Entry(base, width=15)
-
-    fon_label.grid(row=4, column=2, padx=(0, 30))
-    fon_fe_entry.grid(row=4, column=3, pady=5)
-    fon_w_entry.grid(row=4, column=4)
-    fon_ni_entry.grid(row=4, column=5)
-    fon_cr_entry.grid(row=4, column=6)
-    fon_mo_entry.grid(row=4, column=7)
-    fon_v_entry.grid(row=4, column=8)
-
     fon_fe_entry.insert(0, 67)
     fon_w_entry.insert(0, 189)
     fon_ni_entry.insert(0, 122)
@@ -542,101 +608,167 @@ def analisys():
     fon_mo_entry.insert(0, 20)
     fon_v_entry.insert(0, 33)
 
-    # Измерения
-
-    measure_label = ttk.Label(base, text='Измерения')
-    measure_fe_entry = ttk.Entry(base, width=15)
-    measure_w_entry = ttk.Entry(base, width=15)
-    measure_ni_entry = ttk.Entry(base, width=15)
-    measure_cr_entry = ttk.Entry(base, width=15)
-    measure_mo_entry = ttk.Entry(base, width=15)
-    measure_v_entry = ttk.Entry(base, width=15)
-
-    measure_label.grid(row=5, column=2, padx=(0, 30))
-    measure_fe_entry.grid(row=5, column=3, pady=5)
-    measure_w_entry.grid(row=5, column=4)
-    measure_ni_entry.grid(row=5, column=5)
-    measure_cr_entry.grid(row=5, column=6)
-    measure_mo_entry.grid(row=5, column=7)
-    measure_v_entry.grid(row=5, column=8)
-
-    measure_fe_entry.insert(0, measures_list[-1][0])
-    measure_w_entry.insert(0, measures_list[-1][1])
-    measure_ni_entry.insert(0, measures_list[-1][2])
-    measure_cr_entry.insert(0, measures_list[-1][3])
-    measure_mo_entry.insert(0, measures_list[-1][4])
-    measure_v_entry.insert(0, measures_list[-1][5])
+    measure_fe_entry.insert(0, 28213)
+    measure_w_entry.insert(0, 202)
+    measure_ni_entry.insert(0, 367)
+    measure_cr_entry.insert(0, 1500)
+    measure_mo_entry.insert(0, 250)
+    measure_v_entry.insert(0, 400)
 
     # Результат
+    result_entry = ttk.Label(base_df, text='Результат')
+    result_entry.grid(row=5, column=2, pady=(0, 10))
 
-    result_label = ttk.Label(base, text='Результат')
-    fe_result = ttk.Entry(base, width=15)
-    w_result = ttk.Entry(base, width=15)
-    ni_result = ttk.Entry(base, width=15)
-    cr_result = ttk.Entry(base, width=15)
-    mo_result = ttk.Entry(base, width=15)
-    v_result = ttk.Entry(base, width=15)
+    result_fe_entry = ttk.Entry(base_df, width=14)
+    result_fe_entry.grid(row=5, column=3, padx=(10, 0), pady=(0, 10))
 
-    result_label.grid(row=6, column=2, padx=(0, 30))
-    fe_result.grid(row=6, column=3, pady=5)
-    w_result.grid(row=6, column=4)
-    ni_result.grid(row=6, column=5)
-    cr_result.grid(row=6, column=6)
-    mo_result.grid(row=6, column=7)
-    v_result.grid(row=6, column=8)
+    result_w_entry = ttk.Entry(base_df, width=14)
+    result_w_entry.grid(row=5, column=4, padx=(5, 0), pady=(0, 10))
 
-    calculate()
+    result_ni_entry = ttk.Entry(base_df, width=14)
+    result_ni_entry.grid(row=5, column=5, padx=(5, 0), pady=(0, 10))
 
-    list_label_frame = LabelFrame(analisys_window, text='Перечень')
-    list_label_frame.grid(row=12, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
+    result_cr_entry = ttk.Entry(base_df, width=14)
+    result_cr_entry.grid(row=5, column=6, padx=(5, 0), pady=(0, 10))
 
-    analisys_table = ttk.Treeview(list_label_frame, show='headings')
-    headings = ['Название', 'Fe', 'W', 'Ni', 'Cr', 'M', 'V']
-    analisys_table['columns'] = headings
+    result_mo_entry = ttk.Entry(base_df, width=14)
+    result_mo_entry.grid(row=5, column=7, padx=5, pady=(0, 10))
 
-    for heading in headings:
-        analisys_table.column(heading, width=100, anchor=CENTER)
-        analisys_table.heading(heading, text=heading)
+    result_v_entry = ttk.Entry(base_df, width=14)
+    result_v_entry.grid(row=5, column=8, padx=(0, 10), pady=(0, 10))
+
+    # Фото
+    photo_frame = ttk.Frame(analysis_window)
+    photo_frame.grid(row=6, column=0, columnspan=2)
+
+    photo_canvas = Canvas(photo_frame)
+    photo_canvas.grid(row=6, column=0, columnspan=2)
+
+    # Таблица сплавов
+    table_df = ttk.LabelFrame(analysis_window, text='Перечень')
+    table_df.grid(row=6, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
+
+    names = ['Название', 'Fe', 'W', 'Ni', 'Cr', 'Mo', 'V']
+    alloys_table = ttk.Treeview(table_df, show='headings', columns=names, height=15, bootstyle='primary')
+    alloys_table.grid(row=6, column=2, columnspan=7, padx=5, pady=5)
+
+    for name in names:
+        alloys_table.heading(name, text=name)
+        alloys_table.column(name, anchor=CENTER, width=100)
+
+    load_data_from_json('json_data/alloys.json')
+
+    alloys_list = [(i['name'], i['fe'], i['w'], i['ni'], i['cr'], i['mo'], i['v']) for i in json_file]
+
+    for alloy in alloys_list:
+        alloys_table.insert('', 0, values=alloy)
     
-    for i in alloys_list:
-        analisys_table.insert('', 0, values=i)
+    # Выбор фото
+    selected_photo = None
+    select_photo_btn = ttk.Button(analysis_window, text='Выбрать фото', command=load_photo)
+    select_photo_btn.grid(row=7, column=0, columnspan=2)
 
-    analisys_table.grid(row=12, column=2, columnspan=7, rowspan=4, padx=10, pady=10)
+    # Выбранный сплав
+    selected_alloy_df = ttk.LabelFrame(analysis_window, text='Выбран сплав')
+    selected_alloy_df.grid(row=7, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
 
-    main_table_items = main_table.item(main_table.focus()).get('values')
+    selected_alloy_table = ttk.Treeview(selected_alloy_df, columns=names, show='headings', height=1, bootstyle='primary')
+    selected_alloy_table.grid(row=7, column=2, columnspan=7, padx=5, pady=5)
 
-    plane_number_entry.insert(0, main_table_items[1])
-    su_number_entry.insert(0, main_table_items[4])
-    engine_number_entry.insert(0, main_table_items[3])
-    engine_type_entry.insert(0, main_table_items[2])
+    for name in names:
+        selected_alloy_table.heading(name, text=name)
+        selected_alloy_table.column(name, anchor=CENTER, width=100)
+    
+    selected_alloy_table.bind('<Button-3>', show_menu)
 
-    analisys_window.mainloop()
+    # Контекстное меню
+    context_menu = Menu(analysis_window, tearoff=0)
+    context_menu.add_command(label='Открыть файл', command=open_file)
+    
+    # Описание
+    description_df = ttk.LabelFrame(analysis_window, text='Описание')
+    description_df.grid(row=8, column=0, columnspan=2, sticky='wens', padx=10, pady=10)
 
-def saved_alloys():
+    description = Text(description_df, width=58, height=17)
+    description.grid(row=8, column=0, columnspan=2, padx=10, pady=10)
+
+    analysis_window.mainloop()
+
+def saved_results():
     def alloy_details():
         alloy_details_window = Toplevel()
 
+        plane_number_label = ttk.Label(alloy_details_window, text='№ Самолёта')
+        plane_number_label.grid(row=0, column=0, pady=(5, 0))
+
+        plane_number_entry = ttk.Entry(alloy_details_window)
+        plane_number_entry.grid(row=0, column=1, pady=(5, 0))
+
+        su_number_label = ttk.Label(alloy_details_window, text='№ СУ')
+        su_number_label.grid(row=0, column=2, pady=(5, 0))
+
+        su_number_entry = ttk.Entry(alloy_details_window)
+        su_number_entry.grid(row=0, column=3, pady=(5, 0))
+
+        engine_number_label = ttk.Label(alloy_details_window, text='№ Двигателя')
+        engine_number_label.grid(row=1, column=0, pady=(5, 0))
+
+        engine_number_entry = ttk.Entry(alloy_details_window)
+        engine_number_entry.grid(row=1, column=1, pady=(5, 0))
+
+        engine_type_label = ttk.Label(alloy_details_window, text='Тип')
+        engine_type_label.grid(row=1, column=2, pady=(5, 0))
+
+        engine_type_entry = ttk.Entry(alloy_details_window)
+        engine_type_entry.grid(row=1, column=3, pady=(5, 0))
+        
+        photo_canvas = Canvas(alloy_details_window, bd=2, relief=RAISED)
+        photo_canvas.grid(row=2, column=0, columnspan=4, rowspan=3, padx=10, pady=10)
+
+        description = Text(alloy_details_window, width=73, height=11)
+        description.grid(row=2, column=5, columnspan=2, padx=10, pady=10)
+
+        headings = ('fe', 'w', 'ni', 'cr', 'mo', 'v')
+        result_table = ttk.Treeview(alloy_details_window, show='headings', height=1, columns=headings)
+        
+        for heading in headings:
+            result_table.heading(heading, text=heading)
+            result_table.column(heading, width=75, anchor=CENTER)
+
+        result_table.grid(row=3, column=5, columnspan=2)
+
+        alloy_match_label = ttk.Label(alloy_details_window, text='Определён сплав')
+        alloy_match_entry = ttk.Entry(alloy_details_window)
+
+        alloy_match_label.grid(row=4, column=5, pady=10)
+        alloy_match_entry.grid(row=4, column=6, pady=10)
+
         for item in json_file:
             if item['date'] == saved_alloys_table.item(saved_alloys_table.focus())['values'][0]:
-                description = Text(alloy_details_window, width=40, height=20, border=3)
+                plane_number_entry.insert(0, item['plane_number'])
+                su_number_entry.insert(0, item['su_number'])
+                engine_number_entry.insert(0, item['engine_number'])
+                engine_type_entry.insert(0, item['engine_type'])
                 description.insert(1.0, item['description'])
-                description.grid(row=0, column=0)
+                result_table.insert('', 0, values=tuple(item['alloy_result'].values()))
+                alloy_match_entry.insert(0, item['selected_alloy'])
+                
                 if item['photo']:
-                    image = Image.open(item['photo'])
-                    image = image.resize((400, 400))
-                    photo = ImageTk.PhotoImage(image)
-                    alloy_image = Label(alloy_details_window, image=photo)
-                    alloy_image.grid(row=0, column=1)
+                    img = Image.open(item['photo'])
+                    img = img.resize((384, 216))
+                    img = ImageTk.PhotoImage(img)
+                    photo_canvas.create_image(0, 0, anchor=NW, image=img)
+                    description.insert(1, item['photo'])
 
         alloy_details_window.mainloop()
 
-    saved_alloys_window = Tk()
+    saved_alloys_window = Toplevel()
 
     saved_alloys_table = ttk.Treeview(saved_alloys_window, show='headings', columns=(1,))
     saved_alloys_table.heading(1, text='Дата')
     saved_alloys_table.column(1, anchor=CENTER)
 
-    load_data_from_json('json_data/saved_alloys.json')
+    load_data_from_json('json_data/saved_results.json')
 
     for item in json_file:
         saved_alloys_table.insert('', 0, values=(item['date'],))

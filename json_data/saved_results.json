@@ -88,5 +88,23 @@
         "engine_number": "2",
         "engine_type": "RR TRENT 1000",
         "selected_alloy": "M50 [E80DCV40]"
+    },
+    {
+        "date": "11/7/2023 18:42:53",
+        "description": "\n",
+        "photo": "C:/Users/Admin/Desktop/The Project/images/\u0421\u043d\u0438\u043c\u043e\u043a-543.jpeg",
+        "alloy_result": {
+            "fe": "87.63",
+            "w": "0.14",
+            "ni": "1.08",
+            "cr": "4.37",
+            "mo": "4.97",
+            "v": "1.81"
+        },
+        "plane_number": "1",
+        "su_number": "1",
+        "engine_number": "2",
+        "engine_type": "RR TRENT 1000",
+        "selected_alloy": "M50 [E80DCV40]"
     }
 ]

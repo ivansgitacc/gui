@@ -32,30 +32,34 @@ companies_list = list(i['name'] for i in json_file)
 
 def login():
     def login_user():
-        if cur.execute('SELECT * FROM users WHERE username = ? AND password = ?', (name_entry.get(), password_entry.get())).fetchone():
+        if cur.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username_entry.get(), password_entry.get())).fetchone():
             login_window.destroy()
             main()
         else:
             showerror(message='Пользаватель не найден')
 
-    login_window = Tk()
-    login_window.title('Вход')
-    login_window.geometry('+800+350')
-    login_window.resizable(False, False)
+    login_window = ttk.Window(themename='sandstone')
 
-    name_label = ttk.Label(login_window, text='Имя')
-    name_entry = ttk.Entry(login_window)
+    # Имя пользавателя
+    username_label = ttk.Label(login_window, text='Имя')
+    username_label.pack(pady=(20, 0))
+
+    username_entry = ttk.Entry(login_window)
+    username_entry.pack(padx=50)
+
+    # Пароль
     password_label = ttk.Label(login_window, text='Пароль')
-    password_entry = ttk.Entry(login_window, show='*')
-    login_btn = ttk.Button(login_window, text='Вход', command=login_user)
-    register_btn = Button(login_window, text='Создать аккаунт', border=0, fg='blue', cursor='hand1', command=register)
+    password_label.pack(pady=(20, 0))
 
-    name_label.pack(pady=(40, 0))
-    name_entry.pack(padx=40, pady=(0, 10))
-    password_label.pack()
-    password_entry.pack(pady=(0, 20))
-    login_btn.pack()
-    register_btn.pack(pady=(20))
+    password_entry = ttk.Entry(login_window, show='*')
+    password_entry.pack()
+
+    # Вход / Регистрация
+    entry_button = ttk.Button(login_window, text='Войти', command=login_user)
+    entry_button.pack(pady=(20, 0))
+
+    create_account_button = ttk.Button(login_window, text='Создать аккаунт', command=register)
+    create_account_button.pack(pady=10)
 
     login_window.mainloop()
 
@@ -71,22 +75,26 @@ def register():
 
     register_window = Toplevel()
     register_window.title('Регистрация')
-    register_window.geometry('+1200+50')
 
     name_label = ttk.Label(register_window, text='Введите имя')
-    name_entry = ttk.Entry(register_window)
-    password_label = ttk.Label(register_window, text='Введите пароль')
-    password_entry = ttk.Entry(register_window, show='*')
-    password_label_2 = ttk.Label(register_window, text='Подтвердите пароль')
-    password_entry_2 = ttk.Entry(register_window, show='*')
-    register_btn = ttk.Button(register_window, text='Создать', command=create_user)
+    name_label.pack(pady=(20, 0))
 
-    name_label.pack(pady=(40, 0))
-    name_entry.pack(padx=40)
+    name_entry = ttk.Entry(register_window)
+    name_entry.pack(padx=50)
+
+    password_label = ttk.Label(register_window, text='Введите пароль')
     password_label.pack(pady=(10, 0))
+
+    password_entry = ttk.Entry(register_window, show='*')
     password_entry.pack()
+
+    password_label_2 = ttk.Label(register_window, text='Подтвердите пароль')
     password_label_2.pack(pady=(10, 0))
+
+    password_entry_2 = ttk.Entry(register_window, show='*')
     password_entry_2.pack()
+
+    register_btn = ttk.Button(register_window, text='Создать', command=create_user)
     register_btn.pack(pady=20)
 
     register_window.mainloop()
@@ -111,7 +119,8 @@ def main():
                 main_table.delete(main_table.focus())
                 load_data_to_json('json_data/planes.json')
 
-    main_window = ttk.Window(themename='simplex')
+    main_window = ttk.Window(themename='sandstone')
+    main_window.resizable(False, False)
 
     companies_btn = ttk.Button(main_window, text='Список компаний', command=companies)
     companies_btn.grid(row=0, column=0, pady=(10, 0))
@@ -180,20 +189,21 @@ def companies():
 
     companies_window = Toplevel()
     companies_window.title('Список компаний')
+    companies_window.resizable(False, False)
 
     # Список компаний
     companies_table = ttk.Treeview(companies_window, columns=(1,), show='headings', height=15)
     companies_table.heading(1, text='Название')
-    companies_table.column(1, anchor=CENTER)
-    companies_table.grid(row=0, column=0, columnspan=2)
+    companies_table.column(1, anchor=CENTER, width=250)
+    companies_table.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
     companies_table.bind('<Button-3>', show_menu)
 
     # Добавить новую компанию
     add_company_entry = ttk.Entry(companies_window)
-    add_company_entry.grid(row=1, column=0, pady=10, padx=(5, 0))
+    add_company_entry.grid(row=1, column=0, pady=(0, 10))
 
     add_company_btn = ttk.Button(companies_window, text='Добавить', command=add_company)
-    add_company_btn.grid(row=1, column=1, padx=(0, 5))
+    add_company_btn.grid(row=1, column=1, pady=(0, 10))
     
     # Контекстное меню
     context_menu = Menu(companies_window, tearoff=0)
@@ -201,7 +211,6 @@ def companies():
 
     for i in companies_list:
         companies_table.insert('', 0, values=(i,))
-
 
     companies_window.mainloop()
 
@@ -252,6 +261,7 @@ def planes():
 
     planes_window = Toplevel()
     planes_window.title('Главная')
+    planes_window.resizable(False, False)
 
     # Контекстное меню
     context_menu = Menu(planes_window, tearoff=0)
@@ -327,6 +337,7 @@ def plane_types():
 
     plane_types_window = Toplevel()
     plane_types_window.title('Добавить новый тип')
+    plane_types_window.resizable(False, False)
 
     plane_type_label = ttk.Label(plane_types_window, text='Тип самолёта')
     plane_type_entry = ttk.Entry(plane_types_window)
@@ -400,14 +411,15 @@ def analysis():
                 selected_alloy_table.insert('', 0, values=item)
 
         # График
-        font = {'size': 6}
+        font = {'size': 5}
         matplotlib.rc('font', **font)
 
-        figure = Figure(figsize=(7, 3), dpi=100)
+        figure = Figure(figsize=(8, 3), dpi=100)
         global figure_canvas
         figure_canvas = FigureCanvasTkAgg(figure, analysis_window)
         axes = figure.add_subplot()
-        axes.barh(names, result, color='red')
+        axes.barh(names, result, color='#586f8c')
+        # axes.set_yticklabels(axes.get_yticklabels(), rotation=30, ha='right')
 
         chosen_alloy_label_frame = LabelFrame(analysis_window, text='Выбран сплав')
         chosen_alloy_label_frame.grid(row=17, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
@@ -533,7 +545,7 @@ def analysis():
     intensity_label.grid(row=2, column=2)
 
     intensity_fe_entry = ttk.Entry(base_df, width=14)
-    intensity_fe_entry.grid(row=2, column=3, padx=(10, 0))
+    intensity_fe_entry.grid(row=2, column=3, padx=(50, 0))
 
     intensity_w_entry = ttk.Entry(base_df, width=14)
     intensity_w_entry.grid(row=2, column=4, padx=(5, 0))
@@ -555,7 +567,7 @@ def analysis():
     fon_label.grid(row=3, column=2, pady=(5, 0))
 
     fon_fe_entry = ttk.Entry(base_df, width=14)
-    fon_fe_entry.grid(row=3, column=3, padx=(10, 0), pady=(5, 0))
+    fon_fe_entry.grid(row=3, column=3, padx=(50, 0), pady=(5, 0))
 
     fon_w_entry = ttk.Entry(base_df, width=14)
     fon_w_entry.grid(row=3, column=4, padx=(5, 0), pady=(5, 0))
@@ -577,7 +589,7 @@ def analysis():
     measure_label.grid(row=4, column=2)
 
     measure_fe_entry = ttk.Entry(base_df, width=14)
-    measure_fe_entry.grid(row=4, column=3, padx=(10, 0), pady=5)
+    measure_fe_entry.grid(row=4, column=3, padx=(50, 0), pady=5)
 
     measure_w_entry = ttk.Entry(base_df, width=14)
     measure_w_entry.grid(row=4, column=4, padx=(5, 0), pady=5)
@@ -620,7 +632,7 @@ def analysis():
     result_entry.grid(row=5, column=2, pady=(0, 10))
 
     result_fe_entry = ttk.Entry(base_df, width=14)
-    result_fe_entry.grid(row=5, column=3, padx=(10, 0), pady=(0, 10))
+    result_fe_entry.grid(row=5, column=3, padx=(50, 0), pady=(0, 10))
 
     result_w_entry = ttk.Entry(base_df, width=14)
     result_w_entry.grid(row=5, column=4, padx=(5, 0), pady=(0, 10))
@@ -649,12 +661,12 @@ def analysis():
     table_df.grid(row=6, column=2, columnspan=7, sticky='wens', padx=10, pady=10)
 
     names = ['Название', 'Fe', 'W', 'Ni', 'Cr', 'Mo', 'V']
-    alloys_table = ttk.Treeview(table_df, show='headings', columns=names, height=15, bootstyle='primary')
+    alloys_table = ttk.Treeview(table_df, show='headings', columns=names, height=13, bootstyle='primary')
     alloys_table.grid(row=6, column=2, columnspan=7, padx=5, pady=5)
 
     for name in names:
         alloys_table.heading(name, text=name)
-        alloys_table.column(name, anchor=CENTER, width=100)
+        alloys_table.column(name, anchor=CENTER, width=110)
 
     load_data_from_json('json_data/alloys.json')
 
@@ -677,7 +689,7 @@ def analysis():
 
     for name in names:
         selected_alloy_table.heading(name, text=name)
-        selected_alloy_table.column(name, anchor=CENTER, width=100)
+        selected_alloy_table.column(name, anchor=CENTER, width=110)
     
     selected_alloy_table.bind('<Button-3>', show_menu)
 
@@ -689,7 +701,7 @@ def analysis():
     description_df = ttk.LabelFrame(analysis_window, text='Описание')
     description_df.grid(row=8, column=0, columnspan=2, sticky='wens', padx=10, pady=10)
 
-    description = Text(description_df, width=58, height=17)
+    description = Text(description_df, width=58, height=15)
     description.grid(row=8, column=0, columnspan=2, padx=10, pady=10)
 
     analysis_window.mainloop()
